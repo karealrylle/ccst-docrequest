@@ -61,7 +61,7 @@
                     <tr>
                         <th style="width: 10%">Reference No.</th>
                         <th style="width: 14%">Student Name</th>
-                        <th style="width: 9%">Request Date</th>
+                        <th style="width: 11%">Appointment Date</th>
                         <th style="width: 12%">Document Type(s)</th>
                         <th style="width: 9%">Total Amount</th>
                         <th style="width: 12%">Request Status</th>
@@ -78,7 +78,15 @@
                             @endif
                         </td>
                         <td style="width: 14%">{{ $request->full_name }}</td>
-                        <td style="width: 9%">{{ $request->created_at->format('M d, Y') }}</td>
+                        <td style="width: 11%">
+                            @if($request->is_walk_in)
+                                {{ $request->created_at->format('M d, Y') }}
+                            @elseif($request->appointment)
+                                {{ \Carbon\Carbon::parse($request->appointment->appointment_date)->format('M d, Y') }}
+                            @else
+                                <span class="text-muted">No Appointment</span>
+                            @endif
+                        </td>
                         <td style="width: 12%">
                             <div class="document-types">
                                 @foreach($request->items as $item)

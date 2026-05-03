@@ -85,6 +85,14 @@
 
 {{-- Today's Appointments View --}}
 <div id="tab-today" class="tab-content">
+    <div style="margin-bottom: 15px; display: flex; gap: 12px;">
+        <a href="{{ route('registrar.appointments.print-cashier-list', ['range' => 'today']) }}" target="_blank" class="btn-action" style="background: #1A9FE0; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">
+            <i class="bi bi-list-check"></i> Print Cashier List (Today)
+        </a>
+        <a href="{{ route('registrar.appointments.bulk-print-receipts', ['date' => today()->format('Y-m-d')]) }}" target="_blank" class="btn-action" style="background: #1B6B3A; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">
+            <i class="bi bi-printer-fill"></i> Print Today's Receipts
+        </a>
+    </div>
     <div class="appointments-card">
         <div class="table-scroll-wrapper">
             <div class="table-scroll-body">

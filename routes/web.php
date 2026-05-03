@@ -174,7 +174,8 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
     Route::controller(RegistrarAppointment::class)->group(function() {
         Route::get('/appointments', 'index')->name('appointments.index');
         // Route::get('/appointments/print-cashier-list', 'printCashierList')->name('appointments.print-cashier-list');
-        Route::get('/appointments/print-cashier-list', [RegistrarAppointment::class, 'printCashierList'])->name('appointments.print-cashier-list'); // ADD THIS LINE
+        Route::get('/appointments/print-cashier-list', [RegistrarAppointment::class, 'printCashierList'])->name('appointments.print-cashier-list');
+        Route::get('/appointments/bulk-print-receipts', [RegistrarAppointment::class, 'bulkPrintCashierReceipts'])->name('appointments.bulk-print-receipts');
         Route::patch('/appointments/{id}/complete', 'complete')->name('appointments.complete');
         Route::patch('/appointments/{id}/missed', 'missed')->name('appointments.missed');
         Route::get('/time-slots/{id}/data', 'getSlotData')->name('timeslots.data');

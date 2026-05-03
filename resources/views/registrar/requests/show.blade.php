@@ -18,6 +18,17 @@
                 <div><label>Contact Number:</label> <strong>{{ $request->contact_number }}</strong></div>
                 <div><label>Course/Program:</label> <strong>{{ $request->course_program }}</strong></div>
                 <div><label>Year & Section:</label> <strong>{{ $request->year_level }} - {{ $request->section }}</strong></div>
+                <div><label>Appointment Date:</label> 
+                    <strong>
+                        @if($request->is_walk_in)
+                            {{ $request->created_at->format('M d, Y') }} (Walk-in)
+                        @elseif($request->appointment)
+                            {{ \Carbon\Carbon::parse($request->appointment->appointment_date)->format('M d, Y') }}
+                        @else
+                            No Appointment
+                        @endif
+                    </strong>
+                </div>
                 <div><label>Status:</label> 
                     <strong>
                         @php

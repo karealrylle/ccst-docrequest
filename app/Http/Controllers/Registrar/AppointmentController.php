@@ -9,6 +9,7 @@ use App\Traits\SendsDatabaseNotifications;
 use Illuminate\Http\Request;
 use App\Models\DocumentRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 
 class AppointmentController extends Controller
 {
@@ -200,6 +201,53 @@ class AppointmentController extends Controller
         $pdf = Pdf::loadView('pdf.cashier-list', compact('appointments', 'date', 'printed_by', 'totalAmount', 'totalStudents'));
         
         return $pdf->stream('cashier-list-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Print all cashier receipts for a specific date (Bulk Print)
+     */
+    public function bulkPrintCashierReceipts()
+    {
+        $date = request('date', today()->format('Y-m-d'));
+        $targetDate = \Carbon\Carbon::parse($date);
+        
+        // Get both scheduled appointments and walk-ins for this date
+        $requests = DocumentRequest::with(['items.documentType', 'user', 'appointment.timeSlot'])
+            ->where(function($query) use ($targetDate) {
+                $query->whereHas('appointment', function($sub) use ($targetDate) {
+                    $sub->whereDate('appointment_date', $targetDate)
+                        ->where('status', 'scheduled');
+                })->orWhere(function($sub) use ($targetDate) {
+                    $sub->where('is_walk_in', true)
+                        ->whereDate('created_at', $targetDate);
+                });
+            })
+            ->get();
+
+        if ($requests->isEmpty()) {
+            return back()->with('error', 'No scheduled appointments or walk-ins found for this date.');
+        }
+
+        $receiptsData = $requests->map(function ($req) {
+            return [
+                'reference_number' => $req->reference_number,
+                'student_name' => $req->full_name,
+                'student_number' => $req->student_number ?? 'N/A',
+                'appointment_date' => $req->appointment ? $req->appointment->appointment_date->format('F d, Y') : $req->created_at->format('F d, Y'),
+                'appointment_time' => $req->appointment ? ($req->appointment->timeSlot->label ?? 'N/A') : $req->created_at->format('h:i A'),
+                'request_type' => $req->is_walk_in ? 'WALK-IN' : 'ONLINE',
+                'total_fee' => $req->total_fee,
+                'requested_documents' => $req->items,
+                'current_time' => now()->format('h:i A'),
+            ];
+        });
+
+        $pdf = Pdf::loadView('pdf.bulk-cashier-receipts', [
+            'receipts' => $receiptsData,
+            'dateLabel' => \Carbon\Carbon::parse($date)->format('F d, Y')
+        ]);
+        
+        return $pdf->stream('bulk-receipts-' . $date . '.pdf');
     }
 
 }

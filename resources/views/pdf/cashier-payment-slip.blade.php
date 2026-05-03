@@ -129,8 +129,8 @@
                 <tr>
                     <td class="label">Reference Number:</td>
                     <td class="value" style="font-weight: bold; color: #1565C0;">{{ $reference_number }}</td>
-                    <td class="label" style="padding-left: 15px; width: 90px;">Request Date:</td>
-                    <td class="value">{{ $request_date }}</td>
+                    <td class="label" style="padding-left: 15px; width: 90px;">Appointment Date:</td>
+                    <td class="value">{{ $appointment_date }}</td>
                 </tr>
                 <tr>
                     <td class="label">Student Name:</td>
@@ -139,8 +139,8 @@
                     <td class="value">{{ $student_number }}</td>
                 </tr>
                 <tr>
-                    <td class="label">Appointment Date:</td>
-                    <td class="value">{{ $appointment_date ?? 'WALK-IN' }}</td>
+                    <td class="label">Appointment Time:</td>
+                    <td class="value">{{ $appointment_time }}</td>
                     <td class="label" style="padding-left: 15px; width: 90px;">Request Type:</td>
                     <td class="value"><strong>{{ $request_type }}</strong></td>
                 </tr>
@@ -207,14 +207,14 @@
                 <tr>
                     <td class="label">Reference Number:</td>
                     <td class="value" style="font-weight: bold;">{{ $reference_number }}</td>
-                    <td class="label" style="padding-left: 15px; width: 90px;">Payment Date:</td>
-                    <td class="value">{{ date('F d, Y') }}</td>
+                    <td class="label" style="padding-left: 15px; width: 90px;">Appointment Date:</td>
+                    <td class="value">{{ $appointment_date }}</td>
                 </tr>
                 <tr>
                     <td class="label">Student Name:</td>
                     <td class="value">{{ strtoupper($student_name) }}</td>
-                    <td class="label" style="padding-left: 15px; width: 90px;">Payment Time:</td>
-                    <td class="value">{{ $current_time }}</td>
+                    <td class="label" style="padding-left: 15px; width: 90px;">Appointment Time:</td>
+                    <td class="value">{{ $appointment_time }}</td>
                 </tr>
                 <tr>
                     <td class="label">Student Number:</td>

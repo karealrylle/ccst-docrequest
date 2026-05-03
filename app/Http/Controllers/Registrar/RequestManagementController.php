@@ -273,7 +273,8 @@ class RequestManagementController extends Controller
             'total_fee' => $request->total_fee,
             'requested_documents' => $request->items,
             'request_type' => $request->is_walk_in ? 'WALK-IN' : 'ONLINE',
-            'appointment_date' => $request->appointment ? $request->appointment->appointment_date->format('F d, Y') : ($request->is_walk_in ? 'WALK-IN' : 'N/A'),
+            'appointment_date' => $request->appointment ? $request->appointment->appointment_date->format('F d, Y') : ($request->is_walk_in ? $request->created_at->format('F d, Y') : 'N/A'),
+            'appointment_time' => $request->appointment ? ($request->appointment->timeSlot->label ?? 'N/A') : ($request->is_walk_in ? $request->created_at->format('h:i A') : 'N/A'),
             'current_time' => now()->format('h:i A'),
         ];
 
