@@ -7,39 +7,53 @@
     {{-- Heading --}}
     <div class="docs-heading-wrap">
         <h2 class="docs-heading">AVAILABLE DOCUMENTS</h2>
-        <div class="docs-heading-line"></div>
     </div>
 
-    {{-- Document cards grid --}}
-    <div class="docs-grid">
-        @foreach($documentTypes as $doc)
-        <div class="doc-card">
-            <div class="doc-icon-circle">
-                @php
-                    $docImages = [
-                        'REG'  => 'registration-form.png',
-                        'COG'  => 'certificate-of-grades.png',
-                        'COE'  => 'certificate-of-enrollment.png',
-                        'TOR'  => 'transcript-of-records.png',
-                        'CGMC' => 'good-moral-certificate.png',
-                    ];
-                    $imgFile = $docImages[$doc->code] ?? 'document-icon.png';
-                @endphp
-                <img src="{{ asset('images/' . $imgFile) }}" alt="{{ $doc->name }}">
-            </div>
-            <div class="doc-name">
-                {{ $doc->name }}
-                <span class="doc-code">({{ $doc->code }})</span>
-            </div>
+    {{-- Scrollable container for the grid --}}
+    <div class="docs-scroll-container">
+        <div class="docs-grid">
+            @foreach($documentTypes as $doc)
+            <a href="{{ route('student.requests.create', ['select' => $doc->id]) }}" class="doc-card-link">
+                <div class="doc-card">
+                    <div class="doc-icon-circle">
+                        @php
+                            $docImages = [
+                                'REG'  => 'registration-form.png',
+                                'COG'  => 'certificate-of-grades.png',
+                                'COE'  => 'certificate-of-enrollment.png',
+                                'TOR'  => 'transcript-of-records.png',
+                                'CGMC' => 'good-moral-certificate.png',
+                            ];
+                            $docInfo = [
+                                'REG'   => 'Your official enrollment record for the semester.',
+                                'COG'   => 'Official record of your grades for specific periods.',
+                                'COE'   => 'Proof that you are currently enrolled at CCST.',
+                                'TOR'   => 'Complete history of your academic performance.',
+                                'CGMC'  => 'Certifies your good conduct as a student.',
+                                'CLID'  => 'Replacement for a lost or damaged ID card.',
+                                'CGRAD' => 'Proof of graduation or degree completion.',
+                                'CGWA'  => 'Certificate of your general weighted average.',
+                                'CRANK' => 'Official ranking within your batch or course.',
+                                'F138'  => 'Your official high school/grade report card.',
+                            ];
+                            $imgFile = $docImages[$doc->code] ?? 'document-icon.png';
+                            $tooltip = $docInfo[$doc->code] ?? 'Official school document for student records.';
+                        @endphp
+                        <img src="{{ asset('images/' . $imgFile) }}" alt="{{ $doc->name }}">
+                        
+                        {{-- Tooltip Speech Bubble --}}
+                        <div class="doc-tooltip">
+                            {{ $tooltip }}
+                        </div>
+                    </div>
+                    <div class="doc-name">
+                        {{ $doc->name }}
+                        <span class="doc-code">({{ $doc->code }})</span>
+                    </div>
+                </div>
+            </a>
+            @endforeach
         </div>
-        @endforeach
-    </div>
-
-    {{-- REQUEST NOW button --}}
-    <div class="docs-action">
-        <a href="{{ route('student.requests.create') }}" class="btn-request-now">
-            REQUEST NOW &rsaquo;
-        </a>
     </div>
 
 @endsection
@@ -47,7 +61,9 @@
 @push('styles')
 <style>
     .docs-heading-wrap {
-        margin-bottom: 32px;
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 10;
     }
 
     .docs-heading {
@@ -60,20 +76,24 @@
         letter-spacing: 0.5px;
     }
 
-    .docs-heading-line {
-        width: 100%;
-        height: 2px;
-        background: #1A1A1A;
-        border-radius: 2px;
-    }
-
-    /* 3-column grid — 5 cards wrap naturally into 3+2 */
+    /* 4-column grid for a more compact layout */
     .docs-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 28px 32px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 28px 24px;
         margin-bottom: 53px;
-        max-width: 660px;
+        max-width: 800px;
+    }
+
+    .doc-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        transition: transform 0.2s;
+    }
+
+    .doc-card-link:hover {
+        transform: scale(1.02);
     }
 
     .doc-card {
@@ -81,12 +101,13 @@
         flex-direction: column;
         align-items: center;
         gap: 12px;
+        text-align: center;
     }
 
-    /* Amber circle matching mockup exactly */
+    /* Resized amber circle to fit 4 per row */
     .doc-icon-circle {
-        width: 125px;
-        height: 125px;
+        width: 100px;
+        height: 100px;
         border-radius: 50%;
         background: linear-gradient(135deg, #F5A623, #E08A00);
         display: flex;
@@ -94,6 +115,47 @@
         justify-content: center;
         box-shadow: 0 3px 10px rgba(245,166,35,0.35);
         transition: transform 0.2s, box-shadow 0.2s;
+        position: relative; /* for tooltip positioning */
+    }
+
+    /* Tooltip speech bubble */
+    .doc-tooltip {
+        position: absolute;
+        bottom: calc(100% + 15px);
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
+        background: #1B6B3A;
+        color: white;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        width: 180px;
+        text-align: center;
+        line-height: 1.4;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        pointer-events: none;
+        z-index: 9999; /* Ensure it's above everything */
+    }
+
+    .doc-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 8px;
+        border-style: solid;
+        border-color: #1B6B3A transparent transparent transparent;
+    }
+
+    .doc-card:hover .doc-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
     }
 
     .doc-card:hover .doc-icon-circle {
@@ -102,8 +164,8 @@
     }
 
     .doc-icon-circle img {
-        width: 75px;
-        height: 75px;
+        width: 55px;
+        height: 55px;
         object-fit: contain;
         /* no filter — shows icon in its natural color */
     }
@@ -123,24 +185,17 @@
         font-size: 0.78rem;
     }
 
-    .docs-action { margin-top: 4px; }
+    .docs-action { display: none; }
 
-    .btn-request-now {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: #1A9FE0;
-        color: white;
-        font-weight: 700;
-        font-size: 1.0rem;
-        padding: 16px 30px;
-        border-radius: 6px;
-        text-decoration: none;
-        letter-spacing: 0.3px;
-        transition: background 0.2s;
-        margin-left: 24px;
+    /* Fix scroll of the page and prevent tooltip clipping */
+    .docs-scroll-container {
+        overflow-y: visible;
+        padding: 65px 10px 40px 10px; /* Moved half inch higher than before */
+        position: relative;
+        z-index: 5;
     }
-
-    .btn-request-now:hover { background: #0D7FBF; color: white; }
+    .docs-scroll-container::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
+    }
 </style>
 @endpush

@@ -4,17 +4,15 @@
 
 @section('content')
 
-{{-- Welcome Section --}}
+{{-- Hero Section --}}
 <div class="welcome-section">
-    <h1 class="welcome-title">Welcome back, {{ auth()->user()->first_name }}!</h1>
-    <p class="welcome-subtitle">Track your document requests and manage your appointments.</p>
-</div>
-
-{{-- Quick Request Button --}}
-<div class="quick-request">
-    <a href="{{ route('student.requests.create') }}" class="btn-request-now">
-        <i class="bi bi-file-text me-2"></i> REQUEST A DOCUMENT
-    </a>
+    <h1 class="welcome-title">SKIP THE LINE.<br>REQUEST ONLINE.</h1>
+    <p class="welcome-subtitle">No more waiting in line. Request your school documents anytime, anywhere.</p>
+    <div class="hero-actions">
+        <a href="{{ route('student.requests.create') }}" class="btn-hero-request">
+            REQUEST NOW
+        </a>
+    </div>
 </div>
 
 {{-- Upcoming Appointment Card --}}
@@ -114,46 +112,53 @@
         </div>
     </div>
 
-    <div class="ccst-card mb-0">
-        <div class="ccst-card-header yellow">How It Works</div>
-        <div class="ccst-card-body p-0">
-            <div class="rp-guide-step">
-                <span class="rp-step-num">1</span>
-                <span>Submit your document request online</span>
-            </div>
-            <div class="rp-guide-step">
-                <span class="rp-step-num">2</span>
-                <span>Book an appointment</span>
-            </div>
-            <div class="rp-guide-step">
-                <span class="rp-step-num">3</span>
-                <span>Pay at the cashier on your appointment day</span>
-            </div>
-            <div class="rp-guide-step" style="border-bottom:none;">
-                <span class="rp-step-num">4</span>
-                <span>Show receipt to registrar and get your document</span>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @push('styles')
 <style>
     .welcome-section {
-        margin-bottom: 24px;
+        margin-bottom: 40px;
+        padding-top: 10px;
     }
 
     .welcome-title {
         font-family: 'Volkhov', serif;
-        font-size: 1.8rem;
-        font-weight: 700;
+        font-size: 2.5rem;
+        font-weight: 800;
         color: #1A1A1A;
-        margin-bottom: 8px;
+        margin-bottom: 16px;
+        line-height: 1.1;
+        letter-spacing: 1px;
     }
 
     .welcome-subtitle {
-        font-size: 0.95rem;
-        color: #666;
+        font-size: 1rem;
+        color: #444;
+        max-width: 650px;
+        line-height: 2.5;
+        margin-bottom: 30px;
+    }
+
+    .btn-hero-request {
+        display: inline-block;
+        background: #2575C0; /* Branded blue from screenshot */
+        color: white;
+        font-weight: 800;
+        font-size: 1rem;
+        padding: 16px 40px;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 15px rgba(37, 117, 192, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-hero-request:hover {
+        background: #1D5E9B;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 117, 192, 0.4);
     }
 
     .quick-request {

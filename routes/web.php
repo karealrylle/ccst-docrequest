@@ -20,7 +20,7 @@ use App\Http\Controllers\Registrar\ReportController;
 use App\Http\Controllers\Registrar\NotificationController as RegistrarNotification;
 use App\Http\Controllers\Registrar\StudentVerificationController;
 use App\Http\Controllers\Registrar\CalendarController;
-// use App\Http\Controllers\Registrar\WalkInController;
+use App\Http\Controllers\Registrar\WalkInController;
 use App\Http\Controllers\Registrar\DocumentGeneratorController;
 use App\Http\Controllers\Registrar\EmailTemplateController;
 use App\Http\Controllers\Registrar\StudentManagementController;
@@ -59,6 +59,33 @@ Route::get('/dashboard', function () {
         default     => abort(403, 'Unknown role.'),
     };
 })->middleware('auth')->name('dashboard');
+
+Route::get('/test-notifications', function() {
+    $user = auth()->user();
+    if (!$user) return 'Please login first';
+    
+    // 1. Database System Notification
+    $user->notify(new \App\Notifications\SystemNotification(
+        "🛠️ Test Notification: System is working correctly!",
+        route('dashboard')
+    ));
+    
+    // 2. Document Ready (Email + DB)
+    $docReq = \App\Models\DocumentRequest::first();
+    if ($docReq) {
+        $user->notify(new \App\Notifications\DocumentReadyNotification($docReq));
+    }
+    
+    // 3. Account Verified (Email + DB)
+    $user->notify(new \App\Notifications\AccountVerifiedNotification());
+    
+    // 4. Request Submitted (Email + DB)
+    if ($docReq) {
+        $user->notify(new \App\Notifications\RequestSubmittedNotification($docReq));
+    }
+
+    return "✅ 4 Test notifications (Database + Email) have been sent to your account!";
+})->middleware(['auth']);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STUDENT ROUTES
@@ -137,10 +164,10 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
         Route::get('/requests', 'index')->name('requests.index');
         Route::get('/requests/{id}', 'show')->name('requests.show');
         Route::patch('/requests/{id}/status', 'updateStatus')->name('requests.updateStatus');
-        Route::patch('/requests/{id}/received', 'markReceived')->name('requests.markReceived');
         Route::patch('/requests/{id}/completed', 'markAsCompleted')->name('requests.completed');
-        Route::patch('/requests/{id}/mark-ready', [RequestManagementController::class, 'markAsReady'])->name('requests.mark-ready');
-        Route::patch('/requests/{id}/collect-payment', 'collectPayment')->name('requests.collect-payment');
+        Route::patch('/requests/{id}/mark-ready', 'markAsReady')->name('requests.mark-ready');
+        Route::match(['patch', 'get'], '/requests/{id}/collect-payment', 'collectPayment')->name('requests.collect-payment');
+        Route::get('/requests/{id}/print-cashier-receipt', 'printCashierReceipt')->name('requests.print-cashier-receipt');
     });
 
     // ── Appointments Management ─────────────────────────────────────────
@@ -197,13 +224,10 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
 
     // ── Walk-in Mode ──────────────────────────────────────────────────────
     Route::prefix('walkin')->name('walkin.')->group(function () {
-        Route::get('/', [WalkInController::class, 'index'])->name('index');
-        Route::post('/search', [WalkInController::class, 'search'])->name('search');
+        Route::get('/blank-form', [WalkInController::class, 'blankForm'])->name('blank-form');
         Route::get('/create', [WalkInController::class, 'create'])->name('create');
         Route::post('/store', [WalkInController::class, 'store'])->name('store');
-        Route::post('/request', [WalkInController::class, 'createRequest'])->name('request');
-        Route::get('/payment/{id}', [WalkInController::class, 'printPayment'])->name('payment');
-        Route::patch('/payment/{id}/complete', [WalkInController::class, 'completePayment'])->name('payment.complete');
+        Route::get('/payment/{id}', [WalkInController::class, 'generatePaymentDocument'])->name('payment');
     });
 
     // ── Document Generation ──────────────────────────────────────────────

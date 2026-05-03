@@ -120,23 +120,8 @@
         </tbody>
     </table>
 
-    <div style="margin-top: 50px;">
-        <table style="width: 100%;">
-            <tr>
-                <td style="width: 50%;">
-                    <div>_______________________</div>
-                    <div style="font-size: 12px; margin-top: 5px;">Cashier / Authorized Signatory</div>
-                </td>
-                <td style="width: 50%; text-align: right;">
-                    <div>_______________________</div>
-                    <div style="font-size: 12px; margin-top: 5px;">Student Signature</div>
-                </td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="footer">
-        This is a system-generated receipt. Thank you for your payment.
+    <div class="footer" style="margin-top: 100px; border-top: 1px solid #eee; padding-top: 20px;">
+        This electronic receipt serves as the system's official record of payment and is issued for audit and future verification purposes. No signature is required.
     </div>
 </body>
 </html>

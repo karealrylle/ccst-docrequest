@@ -70,15 +70,7 @@ class AppointmentController extends Controller
             'status'              => 'scheduled',
         ]);
 
-        // Send notification to student
-        $message = 'Your pickup appointment has been scheduled for ' . 
-                   date('F j, Y', strtotime($appointment->appointment_date)) . 
-                   ' at ' . $timeSlot->label . 
-                   '.';
-        $url = route('student.requests.history');
-        $this->sendNotificationToCurrentUser($message, $url);
-
-        // Send email notification
+        // Send confirmation email and database notification
         $user->notify(new AppointmentConfirmedNotification($appointment));
 
         return redirect()
@@ -109,9 +101,9 @@ class AppointmentController extends Controller
             return back()->with('error', 'This appointment cannot be rescheduled.');
         }
 
-        // Check if request is still ready for pickup
-        if ($appointment->documentRequest->status !== 'ready_for_pickup') {
-            return back()->with('error', 'Your document is no longer available for pickup. Please contact the registrar.');
+        // Check if request is pending or ready for pickup
+        if (!in_array($appointment->documentRequest->status, ['pending', 'ready_for_pickup'])) {
+            return back()->with('error', 'You can only reschedule pending or ready-for-pickup requests.');
         }
 
         // Check capacity for new time slot
@@ -136,15 +128,7 @@ class AppointmentController extends Controller
             'status'           => 'scheduled',
         ]);
 
-        // Send notification to student
-        $message = 'Your appointment has been rescheduled from ' . 
-                   date('F j, Y', strtotime($oldDate)) . ' at ' . $oldSlot->label .
-                   ' to ' . date('F j, Y', strtotime($appointment->appointment_date)) . 
-                   ' at ' . $timeSlot->label;
-        $url = route('student.requests.history');
-        $this->sendNotificationToCurrentUser($message, $url);
-
-        // Send email notification for reschedule
+        // Send confirmation email and database notification for reschedule
         $user->notify(new AppointmentConfirmedNotification($appointment));
 
         return redirect()

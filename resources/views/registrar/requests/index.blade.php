@@ -36,11 +36,11 @@
             <div class="stats-overview-label">Ready for Pickup</div>
         </div>
     </div>
-    <div class="stats-overview-card" data-filter="received">
+    <div class="stats-overview-card" data-filter="completed">
         <div class="stats-overview-icon"><i class="bi bi-check2-all"></i></div>
         <div class="stats-overview-info">
-            <div class="stats-overview-value">{{ $receivedCount ?? 0 }}</div>
-            <div class="stats-overview-label">Received</div>
+            <div class="stats-overview-value">{{ $completedCount ?? 0 }}</div>
+            <div class="stats-overview-label">Completed</div>
         </div>
     </div>
     <div class="stats-overview-card" data-filter="cancelled">
@@ -73,6 +73,9 @@
                     <tr data-status="{{ $request->status }}">
                         <td style="width: 10%">
                             <strong>{{ $request->reference_number }}</strong>
+                            @if($request->is_walk_in)
+                                <br><span class="badge" style="background:#FFAA00; color:black; font-size: 0.65rem; margin-top:2px;">Walk-in</span>
+                            @endif
                         </td>
                         <td style="width: 14%">{{ $request->full_name }}</td>
                         <td style="width: 9%">{{ $request->created_at->format('M d, Y') }}</td>
@@ -110,7 +113,7 @@
                                     </a>
                                 {{-- Pending & Non-Printable -> Mark as Ready --}}
                                 @elseif($request->status === 'pending' && !$request->is_printable)
-                                    <button class="action-btn-ready" onclick="markAsReady({{ $request->id }}, '{{ $request->reference_number }}')">
+                                    <button type="button" class="action-btn-ready" onclick="markAsReady({{ $request->id }}, '{{ $request->reference_number }}')">
                                         <i class="bi bi-check-circle"></i> Mark as Ready
                                     </button>
                                 {{-- Default fallback (e.g. Received/Cancelled/Other Pending) --}}
@@ -750,12 +753,15 @@
             const rows = document.querySelectorAll('#requestsTable tbody tr');
             
             rows.forEach(row => {
+                const status = row.getAttribute('data-status');
                 if (filter === 'all') {
                     row.style.display = '';
+                } else if (filter === 'pending') {
+                    // Match the controller's definition of pending
+                    const pendingStatuses = ['pending', 'payment_method_set', 'payment_uploaded', 'payment_rejected'];
+                    row.style.display = pendingStatuses.includes(status) ? '' : 'none';
                 } else {
-                    const statusCell = row.querySelector('td:nth-child(7) .req-badge');
-                    const statusText = statusCell ? statusCell.textContent.trim().toLowerCase().replace(/ /g, '_') : '';
-                    row.style.display = statusText === filter ? '' : 'none';
+                    row.style.display = (status === filter) ? '' : 'none';
                 }
             });
         });
@@ -863,7 +869,8 @@
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
                 .then(response => response.json())

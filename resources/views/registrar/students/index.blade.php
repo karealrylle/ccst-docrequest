@@ -82,33 +82,8 @@
 @endsection
 
 @section('right-panel')
-    <div class="rp-date-card">
-        <div class="rp-date-day">{{ now()->format('d') }}</div>
-        <div class="rp-date-month">{{ now()->format('F Y') }}</div>
-        <div class="rp-date-time" id="live-time">--:-- --</div>
-    </div>
 
-    <div class="ccst-card mb-0">
-        <div class="ccst-card-header blue">Directory Guide</div>
-        <div class="ccst-card-body p-0">
-            <div class="rp-guide-step">
-                <span class="rp-step-num">1</span>
-                <span>Search by name, student number, or email.</span>
-            </div>
-            <div class="rp-guide-step">
-                <span class="rp-step-num">2</span>
-                <span>Click the eye icon to view full student details.</span>
-            </div>
-            <div class="rp-guide-step">
-                <span class="rp-step-num">3</span>
-                <span>Click the power button to deactivate/activate a student.</span>
-            </div>
-            <div class="rp-guide-step" style="border-bottom:none;">
-                <span class="rp-step-num">4</span>
-                <span>Click the key icon to send a password reset link.</span>
-            </div>
-        </div>
-    </div>
+
 @endsection
 
 @push('styles')
@@ -190,20 +165,6 @@
         cursor: pointer;
     }
 
-    .rp-date-card {
-        background: rgba(255,255,255,0.18);
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-        color: white;
-        backdrop-filter: blur(8px);
-        margin-bottom: 18px;
-    }
-
-    .rp-date-day { font-size: 2.8rem; font-weight: 700; }
-    .rp-date-month { font-size: 0.85rem; opacity: 0.85; }
-    .rp-date-time { font-size: 1rem; font-weight: 600; margin-top: 6px; }
-
     .rp-guide-step {
         display: flex;
         align-items: flex-start;
@@ -241,17 +202,6 @@
     }
 
     // Live clock
-    function updateTime() {
-        const now = new Date();
-        let h = now.getHours();
-        const m = String(now.getMinutes()).padStart(2,'0');
-        const s = String(now.getSeconds()).padStart(2,'0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        const el = document.getElementById('live-time');
-        if (el) el.textContent = `${h}:${m}:${s} ${ampm}`;
-    }
-    updateTime();
-    setInterval(updateTime, 1000);
+
 </script>
 @endpush

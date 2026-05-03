@@ -34,12 +34,20 @@ class NotificationController extends Controller
             ->take(50)
             ->get()
             ->map(function ($notification) {
+                $data = $notification->data;
+                
+                // Extract message with fallbacks
+                $message = $data['message'] ?? $data['data']['message'] ?? $data['title'] ?? 'You have a new notification.';
+                
+                // Extract URL with fallbacks
+                $url = $data['url'] ?? $data['data']['url'] ?? '#';
+                
                 return [
                     'id'      => $notification->id,
-                    'message' => $notification->data['message'] ?? 'You have a new notification.',
-                    'url'     => $notification->data['url'] ?? '#',
+                    'message' => $message,
+                    'url'     => $url,
                     'time'    => $notification->created_at->diffForHumans(),
-                    'read'    => $notification->read_at !== null, // true if already read
+                    'read'    => $notification->read_at !== null,
                 ];
             });
 

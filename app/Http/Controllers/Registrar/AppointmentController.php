@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\TimeSlot;
 use App\Traits\SendsDatabaseNotifications;
 use Illuminate\Http\Request;
+use App\Models\DocumentRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class AppointmentController extends Controller
@@ -140,53 +141,54 @@ class AppointmentController extends Controller
     public function printCashierList()
     {
         $range = request('range', 'today');
-        $query = Appointment::with(['student', 'documentRequest', 'timeSlot'])
-            ->orderBy('appointment_date', 'desc')
-            ->orderBy('time_slot_id', 'asc');
+        $today = today();
+        
+        $query = DocumentRequest::with(['appointment.timeSlot', 'items.documentType', 'user'])
+            ->orderBy('created_at', 'desc');
 
         switch ($range) {
             case 'today':
-                $query->whereDate('appointment_date', today());
-                $dateLabel = today()->format('F d, Y');
-                break;
-            case 'last_week':
-                $start = now()->subWeek()->startOfWeek();
-                $end = now()->subWeek()->endOfWeek();
-                $query->whereBetween('appointment_date', [$start, $end]);
-                $dateLabel = $start->format('M d') . ' - ' . $end->format('M d, Y');
-                break;
-            case 'last_month':
-                $query->whereMonth('appointment_date', now()->subMonth()->month)
-                      ->whereYear('appointment_date', now()->subMonth()->year);
-                $dateLabel = now()->subMonth()->format('F Y');
-                break;
-            case 'last_year':
-                $query->whereYear('appointment_date', now()->subYear()->year);
-                $dateLabel = now()->subYear()->format('Y');
+                $query->where(function($q) use ($today) {
+                    $q->whereHas('appointment', function($sub) use ($today) {
+                        $sub->whereDate('appointment_date', $today);
+                    })->orWhere(function($sub) use ($today) {
+                        $sub->where('is_walk_in', true)
+                            ->whereDate('created_at', $today);
+                    });
+                });
+                $dateLabel = $today->format('F d, Y');
                 break;
             case 'all':
-                $dateLabel = 'All Appointments';
+                $dateLabel = 'All Requests';
                 break;
             default:
-                $query->whereDate('appointment_date', today());
-                $dateLabel = today()->format('F d, Y');
+                $query->where(function($q) use ($today) {
+                    $q->whereHas('appointment', function($sub) use ($today) {
+                        $sub->whereDate('appointment_date', $today);
+                    })->orWhere(function($sub) use ($today) {
+                        $sub->where('is_walk_in', true)
+                            ->whereDate('created_at', $today);
+                    });
+                });
+                $dateLabel = $today->format('F d, Y');
                 break;
         }
 
         $appointments = $query->get()
-            ->map(function ($appointment) {
+            ->map(function ($docRequest) {
                 return (object) [
-                    'date' => \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y'),
-                    'time_slot' => $appointment->timeSlot->label ?? '—',
-                    'student_name' => $appointment->student->full_name ?? $appointment->student->name,
-                    'student_number' => $appointment->student->student_number,
-                    'reference_number' => $appointment->documentRequest->reference_number,
-                    'amount' => $appointment->documentRequest->total_fee,
-                    'strand' => $appointment->student->strand,
-                    'grade_section' => $appointment->student->grade_level . ' - ' . $appointment->student->section,
-                    'documents' => $appointment->documentRequest->items->map(function($item) {
-                        return $item->documentType->name . ' × ' . $item->copies;
-                    })->implode(', '),
+                    'date' => $docRequest->is_walk_in 
+                        ? $docRequest->created_at->format('M d, Y')
+                        : ($docRequest->appointment ? $docRequest->appointment->appointment_date->format('M d, Y') : $docRequest->created_at->format('M d, Y')),
+                    'time_slot' => $docRequest->appointment->timeSlot->label ?? 'WALK-IN',
+                    'student_name' => $docRequest->full_name,
+                    'student_number' => $docRequest->student_number,
+                    'reference_number' => $docRequest->reference_number,
+                    'amount' => $docRequest->total_fee,
+                    'strand' => $docRequest->course_program, // Using course_program as strand/program
+                    'grade_section' => $docRequest->year_level . ' - ' . $docRequest->section,
+                    'request_type' => $docRequest->is_walk_in ? 'WALK-IN' : 'ONLINE',
+                    'requested_documents' => $docRequest->items,
                 ];
             });
 

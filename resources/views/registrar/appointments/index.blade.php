@@ -332,11 +332,7 @@
 @endsection
 
 @section('right-panel')
-    <div class="rp-date-card">
-        <div class="rp-date-day">{{ now()->format('d') }}</div>
-        <div class="rp-date-month">{{ now()->format('F Y') }}</div>
-        <div class="rp-date-time" id="live-time">--:-- --</div>
-    </div>
+
 
     <div class="ccst-card mb-0">
         <div class="ccst-card-header blue">Appointment Stats</div>
@@ -818,37 +814,6 @@
         color: white;
     }
 
-    .rp-date-card {
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-        color: white;
-        backdrop-filter: blur(8px);
-        margin-bottom: 10px;
-    }
-
-    .rp-date-day {
-        font-size: 3.25rem;
-        font-weight: 700;
-        line-height: 1;
-        text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        margin-top: 20px;
-    }
-
-    .rp-date-month {
-        font-size: 1.25rem;
-        opacity: 0.85;
-        margin-top: 2px;
-    }
-
-    .rp-date-time {
-        font-size: 1.50rem;
-        font-weight: 600;
-        margin-top: 6px;
-        opacity: 0.9;
-        letter-spacing: 1px;
-    }
-
     .rp-guide-step {
         display: flex;
         align-items: flex-start;
@@ -1027,17 +992,6 @@
     }
 
     // Live clock
-    function updateTime() {
-        const now = new Date();
-        let h = now.getHours();
-        const m = String(now.getMinutes()).padStart(2, '0');
-        const s = String(now.getSeconds()).padStart(2, '0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        const el = document.getElementById('live-time');
-        if (el) el.textContent = `${h}:${m}:${s} ${ampm}`;
-    }
-    updateTime();
-    setInterval(updateTime, 1000);
+
 </script>
 @endpush

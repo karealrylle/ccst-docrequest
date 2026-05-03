@@ -321,24 +321,8 @@
 @endsection
 
 @section('right-panel')
-    <div class="rp-date-card">
-        <div class="rp-date-day">{{ now()->format('d') }}</div>
-        <div class="rp-date-month">{{ now()->format('F Y') }}</div>
-        <div class="rp-date-time" id="live-time">--:-- --</div>
-    </div>
 
-    <div class="ccst-card mb-0">
-        <div class="ccst-card-header yellow">Account Tips</div>
-        <div class="ccst-card-body">
-            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.9);">
-                <p><i class="bi bi-shield-check me-2"></i> Keep your contact information up to date.</p>
-                <hr style="border-color: rgba(255,255,255,0.2);">
-                <p><i class="bi bi-key me-2"></i> Change your password regularly for security.</p>
-                <hr style="border-color: rgba(255,255,255,0.2);">
-                <p><i class="bi bi-envelope me-2"></i> Notifications will be sent to your email.</p>
-            </div>
-        </div>
-    </div>
+
 @endsection
 
 @push('styles')
@@ -353,9 +337,8 @@
 
     .req-scroll {
         height: calc(100vh - var(--header-h) - var(--footer-h) - 120px);
-        overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+        overflow-y: auto; overflow-x: hidden;
     }
-    .req-scroll::-webkit-scrollbar { display: none; }
 
     .req-card {
         background: #ffffff; border: 1px solid #D0DDD0;
@@ -385,39 +368,7 @@
     .btn-submit { display:inline-flex; align-items:center; background:#1A9FE0; color:white; font-weight:700; font-size:0.85rem; padding:10px 24px; border:none; border-radius:6px; cursor:pointer; text-decoration:none; font-family:'Poppins',sans-serif; transition:background 0.2s; }
     .btn-submit:hover { background:#0D7FBF; color:white; }
 
-    .rp-date-card {
-        /* background: rgba(255,255,255,0.18); */
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-        color: white;
-        backdrop-filter: blur(8px);
-        /* -webkit-backdrop-filter: blur(8px); */
-        /* border: 1px solid rgba(255,255,255,0.3); */
-        margin-bottom: 10px;
-    }
 
-    .rp-date-day {
-        font-size: 3.25rem;
-        font-weight: 700;
-        line-height: 1;
-        text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        margin-top: 20px;
-    }
-
-    .rp-date-month {
-        font-size: 1.25rem;
-        opacity: 0.85;
-        margin-top: 2px;
-    }
-
-    .rp-date-time {
-        font-size: 1.50rem;
-        font-weight: 600;
-        margin-top: 6px;
-        opacity: 0.9;
-        letter-spacing: 1px;
-    }
 </style>
 @endpush
 
@@ -536,18 +487,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (confirmInput) confirmInput.addEventListener('input', checkMatch);
 
     // Live clock
-    function updateTime() {
-        const now = new Date();
-        let h = now.getHours();
-        const m = String(now.getMinutes()).padStart(2, '0');
-        const s = String(now.getSeconds()).padStart(2, '0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        const el = document.getElementById('live-time');
-        if (el) el.textContent = `${h}:${m}:${s} ${ampm}`;
-    }
-    updateTime();
-    setInterval(updateTime, 1000);
+
 });
 </script>
 @endpush

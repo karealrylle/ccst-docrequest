@@ -42,8 +42,8 @@ class RequestSubmittedNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'message' => 'Your document request (' . $this->docRequest->reference_number . ') has been submitted.',
-            'url' => '/student/requests/' . $this->docRequest->id,
+            'message' => '📝 Your request ' . $this->docRequest->reference_number . ' has been submitted successfully.',
+            'url' => route('student.requests.show', $this->docRequest->id, false),
             'type' => 'request_submitted',
         ];
     }

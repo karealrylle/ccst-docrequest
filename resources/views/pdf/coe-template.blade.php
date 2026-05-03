@@ -1,140 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Certificate of Enrollment - {{ $student_name }}</title>
     <style>
-        @page {
-            margin: 2.5cm;
-        }
-        body {
-            font-family: 'Arial', sans-serif;
-            font-size: 12px;
-            line-height: 1.5;
-            color: #333;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #1B6B3A;
-            padding-bottom: 10px;
-        }
-        .header h1 {
-            color: #1B6B3A;
-            font-size: 18px;
-            margin: 0 0 5px;
-            text-transform: uppercase;
-        }
-        .header h2 {
-            font-size: 14px;
-            margin: 0;
-            font-weight: normal;
-        }
-        .header p {
-            font-size: 11px;
-            color: #666;
-            margin: 5px 0 0;
-        }
-        .title {
-            text-align: center;
-            margin: 30px 0;
-        }
-        .title h3 {
-            font-size: 16px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin: 0;
-        }
-        .content {
-            margin: 20px 0;
-        }
-        .info-row {
-            margin-bottom: 12px;
-        }
-        .info-label {
-            font-weight: bold;
-            width: 150px;
-            display: inline-block;
-        }
-        .signature-area {
-            margin-top: 50px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .signature-box {
-            text-align: center;
-            width: 200px;
-        }
-        .signature-line {
-            border-top: 1px solid #333;
-            margin-top: 30px;
-            padding-top: 5px;
-        }
-        .footer {
-            position: absolute;
-            bottom: 30px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 9px;
-            color: #999;
-        }
+        @page { size: letter; margin: 0.5in; }
+        body { font-family: 'Times New Roman', serif; font-size: 12pt; margin: 0; padding: 0; }
+        .page { width: 100%; position: relative; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+        .header-text-cell { text-align: center; vertical-align: middle; }
+        .school-name { font-size: 16pt; font-weight: bold; color: #1565C0; font-family: 'Helvetica', Arial, sans-serif; line-height: 1.2; }
+        .formerly { font-style: italic; font-size: 9pt; color: #333; font-family: 'Helvetica', Arial, sans-serif; }
+        .address { font-size: 9pt; color: #333; font-family: 'Helvetica', Arial, sans-serif; }
+        .office { font-size: 11pt; font-weight: bold; color: #1565C0; font-family: 'Helvetica', Arial, sans-serif; margin-top: 2px; }
+        .header-divider { border-top: 2px solid #1565C0; margin: 6px 0 24px 0; }
+        .cert-title { text-align: center; font-size: 16pt; font-weight: bold; letter-spacing: 6px; font-family: 'Helvetica', Arial, sans-serif; margin-bottom: 28px; }
+        .body-text { text-indent: 0.5in; text-align: justify; line-height: 1.8; margin-bottom: 16px; }
+        .info-table { width: 100%; margin-left: 0.5in; margin-bottom: 20px; }
+        .info-label { font-weight: bold; width: 150px; }
+        .signature-section { margin-top: 48px; }
+        .signatory-name { font-weight: bold; font-size: 12pt; margin-bottom: 2px; }
+        .footer-seal { position: absolute; bottom: 0.5in; left: 0in; font-style: italic; font-size: 10pt; }
+        .form-number { position: absolute; bottom: 0in; left: 0in; font-size: 10pt; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>CLARK COLLEGE OF SCIENCE AND TECHNOLOGY</h1>
-        <h2>Senior High School</h2>
-        <p>Dau, Mabalacat City, Pampanga</p>
-    </div>
+<div class="page">
+    <table class="header-table">
+        <tr>
+            <td style="width: 72px; vertical-align: middle;">
+                <img src="{{ public_path('images/ccst-logo.png') }}" alt="CCST Logo" style="width: 72px; height: 72px;">
+            </td>
+            <td class="header-text-cell">
+                <div class="school-name">Clark College of Science and Technology</div>
+                <div class="formerly">Formerly: Clark International College of Science and Technology</div>
+                <div class="address">SNS Bldg., Aurea St., Samsonville Subdivision, Dau, Mabalacat City, Pampanga. Tel. 624 - 0215</div>
+                <div class="office">Office of the Registrar</div>
+            </td>
+            <td style="width: 72px;"></td>
+        </tr>
+    </table>
+    <div class="header-divider"></div>
 
-    <div class="title">
-        <h3>CERTIFICATE OF ENROLLMENT</h3>
-    </div>
+    <div class="cert-title">CERTIFICATE OF ENROLLMENT</div>
 
     <div class="content">
-        <p style="text-align: justify; margin-bottom: 20px;">
+        <p class="body-text">
             This is to certify that <strong>{{ $student_name }}</strong> is officially enrolled as a student of 
             Clark College of Science and Technology - Senior High School for the School Year 
             <strong>{{ $school_year }}</strong>.
         </p>
 
-        <div class="info-row">
-            <span class="info-label">Student Number:</span>
-            <span>{{ $student_number }}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Strand:</span>
-            <span>{{ $strand }}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Grade Level:</span>
-            <span>{{ $grade_level }}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Section:</span>
-            <span>{{ $section }}</span>
-        </div>
+        <table class="info-table">
+            <tr><td class="info-label">Student Number:</td><td>{{ $student_number }}</td></tr>
+            <tr><td class="info-label">Strand:</td><td>{{ $strand }}</td></tr>
+            <tr><td class="info-label">Grade Level:</td><td>{{ $grade_level }}</td></tr>
+            <tr><td class="info-label">Section:</td><td>{{ $section }}</td></tr>
+        </table>
 
-        <p style="text-align: justify; margin-top: 20px;">
+        <p class="body-text">
             This certification is issued upon the request of the above-named student for 
             <strong>{{ $purpose }}</strong>.
         </p>
     </div>
 
-    <div class="signature-area">
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div>Registrar</div>
-        </div>
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div>Date Issued: {{ $current_date }}</div>
-        </div>
-    </div>
+    <table style="width: 100%; margin-top: 48px;">
+        <tr>
+            <td style="width: 50%; vertical-align: top;">
+                <div style="font-style: italic; margin-bottom: 24px;">Certified True and Correct by:</div>
+                <div class="signatory-name">Ms. Chriscel Ivy A. Caranza</div>
+                <div>Senior High School Registrar</div>
+            </td>
+            <td style="width: 50%; vertical-align: top; text-align: right;">
+                <div style="margin-top: 48px;">Date Issued: {{ $current_date }}</div>
+            </td>
+        </tr>
+    </table>
 
-    <div class="footer">
-        <p>{{ $footer_text }}</p>
-    </div>
+    <div class="footer-seal"><em>Not valid without the<br>school's official seal</em></div>
+    <div class="form-number">CCSTSHS-002</div>
+</div>
 </body>
 </html>

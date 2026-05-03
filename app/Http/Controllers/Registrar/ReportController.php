@@ -94,13 +94,12 @@ class ReportController extends Controller
      */
     private function exportPaymentsReport($dateFrom, $dateTo, $includeSummary)
     {
-        $payments = DocumentRequest::whereNotNull('payment_method')
-            ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+        $payments = DocumentRequest::whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
             ->orderBy('created_at', 'desc')
             ->get();
 
         $totalCollected = $payments->where('payment_status', 'paid')->sum('total_fee');
-        $methodCounts = $payments->groupBy('payment_method')->map->count();
+        $statusCounts = $payments->groupBy('payment_status')->map->count();
 
         $data = [
             'title' => 'Payments Report',
@@ -108,7 +107,7 @@ class ReportController extends Controller
             'payments' => $payments,
             'totalPayments' => $payments->count(),
             'totalCollected' => $totalCollected,
-            'methodCounts' => $methodCounts,
+            'statusCounts' => $statusCounts,
             'includeSummary' => $includeSummary,
             'generated_at' => now()->format('F d, Y h:i A'),
             'generated_by' => auth()->user()->name,

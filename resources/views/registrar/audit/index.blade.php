@@ -173,11 +173,7 @@
 @endsection
 
 @section('right-panel')
-    <div class="rp-date-card">
-        <div class="rp-date-day">{{ now()->format('d') }}</div>
-        <div class="rp-date-month">{{ now()->format('F Y') }}</div>
-        <div class="rp-date-time" id="live-time">--:-- --</div>
-    </div>
+
 
     <div class="ccst-card mb-0">
         <div class="ccst-card-header blue">Audit Information</div>
@@ -496,25 +492,6 @@
         justify-content: center;
     }
 
-    .rp-date-card {
-        background: rgba(255,255,255,0.18);
-        border-radius: 12px;
-        padding: 16px;
-        text-align: center;
-        color: white;
-        backdrop-filter: blur(8px);
-        margin-bottom: 18px;
-    }
-
-    .rp-date-day { font-size: 2.8rem; font-weight: 700; }
-    .rp-date-month { font-size: 0.85rem; opacity: 0.85; }
-    .rp-date-time { font-size: 1rem; font-weight: 600; margin-top: 6px; }
-
-    .rp-stat-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 9px 14px;
         border-bottom: 1px solid rgba(255,255,255,0.2);
         color: white;
     }
@@ -535,17 +512,6 @@
 
 @push('scripts')
 <script>
-    function updateTime() {
-        const now = new Date();
-        let h = now.getHours();
-        const m = String(now.getMinutes()).padStart(2,'0');
-        const s = String(now.getSeconds()).padStart(2,'0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        const el = document.getElementById('live-time');
-        if (el) el.textContent = `${h}:${m}:${s} ${ampm}`;
-    }
-    updateTime();
-    setInterval(updateTime, 1000);
+
 </script>
 @endpush

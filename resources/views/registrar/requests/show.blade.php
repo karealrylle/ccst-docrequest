@@ -77,14 +77,28 @@
                             </td>
                             <td class="text-end">
                                 @if($item->documentType->is_printable)
-                                    <button type="button" 
-                                            onclick="previewDocument({{ $request->id }}, {{ $item->document_type_id }}, '{{ $item->documentType->name }}')" 
-                                            class="btn-tiny {{ $isPrinted ? 'btn-view-file' : 'btn-generate-file' }}">
-                                        <i class="bi {{ $isPrinted ? 'bi-eye' : 'bi-file-pdf' }}"></i> 
-                                        {{ $isPrinted ? 'View' : 'Generate & Preview' }}
-                                    </button>
+                                    <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                                        <button type="button" 
+                                                onclick="previewDocument({{ $request->id }}, {{ $item->document_type_id }}, '{{ $item->documentType->name }}')" 
+                                                class="btn-tiny {{ $isPrinted ? 'btn-view-file' : 'btn-generate-file' }}">
+                                            <i class="bi {{ $isPrinted ? 'bi-eye' : 'bi-file-pdf' }}"></i> 
+                                            {{ $isPrinted ? 'View' : 'Preview' }}
+                                        </button>
+
+                                        @if($request->status === 'ready_for_pickup')
+                                            <button type="button" 
+                                                    onclick="printSingleDocument({{ $item->id }})" 
+                                                    class="btn-tiny" style="background: #1B6B3A; color: white; border: none;">
+                                                <i class="bi bi-printer"></i> Print
+                                            </button>
+                                        @endif
+                                    </div>
                                 @else
-                                    <span class="text-muted small">Manual Process</span>
+                                    <button type="button" 
+                                            onclick="markAsCompleted({{ $request->id }})" 
+                                            class="btn-tiny" style="background: #1B6B3A; color: white;">
+                                        <i class="bi bi-check2-circle"></i> Mark as Completed
+                                    </button>
                                 @endif
                             </td>
                         </tr>
@@ -93,7 +107,7 @@
                 </table>
                 
                 @if($request->status === 'ready_for_pickup')
-                <div class="print-actions mt-4" style="display: flex; justify-content: center;">
+                <div class="print-actions mt-4" style="display: none; justify-content: center;">
                     <button type="button" onclick="printSelectedDocuments()" class="btn-action btn-received w-64 py-3 shadow-sm" id="printSelectedBtn" disabled>
                         <i class="bi bi-printer-fill me-2"></i> PRINT SELECTED DOCUMENTS
                     </button>
@@ -106,19 +120,37 @@
         <div class="action-buttons">
             {{-- Mark as Ready (for non-printable) --}}
             @if($request->status === 'pending' && !$request->is_printable)
-                <button onclick="markAsReady({{ $request->id }})" class="btn-action btn-processing">
+                <button type="button" onclick="markAsReady({{ $request->id }})" class="btn-action btn-processing">
                     <i class="bi bi-check-circle"></i> Mark as Ready for Pickup
                 </button>
             @endif
 
-            @if($request->payment_status !== 'paid')
-                <form action="{{ route('registrar.requests.collect-payment', $request->id) }}" method="POST" style="display:inline;">
-                    @csrf
-                    @method('PATCH')
-                    <button type="submit" class="btn-action" style="background:#198754;" onclick="return confirm('Collect payment and print receipt?')">
-                        <i class="bi bi-cash-stack"></i> Collect Payment & Receipt
-                    </button>
-                </form>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                {{-- Print Receipt (Cashier Payment Slip) --}}
+                <a href="{{ route('registrar.requests.print-cashier-receipt', $request->id) }}" target="_blank" class="btn-action" style="background:#0D7FBF;">
+                    <i class="bi bi-printer"></i> Print Receipt
+                </a>
+
+                {{-- E-receipt Logic --}}
+                @if($request->payment_status !== 'paid')
+                    <form action="{{ route('registrar.requests.collect-payment', $request->id) }}" method="POST" style="display:inline;">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn-action" style="background:#198754;" onclick="return confirm('Process payment and view e-receipt?')">
+                            <i class="bi bi-file-earmark-check"></i> View E-receipt
+                        </button>
+                    </form>
+                @else
+                    <a href="{{ route('registrar.requests.collect-payment', $request->id) }}" target="_blank" class="btn-action" style="background:#198754;">
+                        <i class="bi bi-file-earmark-check"></i> View E-receipt
+                    </a>
+                @endif
+            </div>
+
+            @if($request->status === 'ready_for_pickup' && !$request->is_printable)
+                <button type="button" onclick="markAsCompleted({{ $request->id }})" class="btn-action" style="background:#055160;">
+                    <i class="bi bi-check-all"></i> Mark as Completed
+                </button>
             @endif
 
             <a href="{{ route('registrar.requests.index') }}" class="btn-back mt-0">
@@ -147,32 +179,34 @@
     </div>
 </div>
 
-@endsection
-
-@section('right-panel')
-    <div class="rp-date-card">
-        <div class="rp-date-day">{{ now()->format('d') }}</div>
-        <div class="rp-date-month">{{ now()->format('F Y') }}</div>
-        <div class="rp-date-time" id="live-time">--:-- --</div>
-    </div>
-
-    <div class="ccst-card mb-0">
-        <div class="ccst-card-header blue">Status Guide</div>
-        <div class="ccst-card-body p-0">
-            <div class="rp-guide-step">
-                <span class="rp-step-num">1</span>
-                <span>Generate and preview documents to verify information</span>
+<!-- Non-Printable Walk-in Modal -->
+<div class="modal fade" id="nonPrintableModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#F5C518; color:#1A1A1A; border:none;">
+                <h6 class="modal-title fw-700 mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Documents Not Yet Ready
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="rp-guide-step">
-                <span class="rp-step-num">2</span>
-                <span>Select multiple documents for bulk printing and completion</span>
+            <div class="modal-body" style="padding:20px;">
+                <p>These documents require manual processing and are not auto-printable.</p>
+                <p><strong>Instructions for Student:</strong> Please inform the student that they will receive an email when their request is ready to be picked up. They can go to the cashier directly to pay at that time.</p>
+                <p><strong>Registrar Action:</strong> Once you have finished processing the documents, mark this request as <strong>Ready for Pickup</strong>. The Payment Slip can then be generated and given to the cashier.</p>
             </div>
-            <div class="rp-guide-step" style="border-bottom:none;">
-                <span class="rp-step-num">3</span>
-                <span>Completed requests are moved to the finalized list</span>
+            <div class="modal-footer" style="border-top:1px solid #e0e0e0; padding:15px 20px;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
+
+@endsection
+
+@section('right-panel')
+
+
+
 @endsection
 
 @push('styles')
@@ -378,14 +412,7 @@
         font-size: 0.7rem; font-weight: 800;
         display: flex; align-items: center; justify-content: center;
     }
-    .rp-date-card {
-        background: rgba(255,255,255,0.15); border-radius: 12px;
-        padding: 20px; text-align: center; color: white;
-        backdrop-filter: blur(8px); margin-bottom: 20px;
-    }
-    .rp-date-day { font-size: 3rem; font-weight: 800; line-height: 1; }
-    .rp-date-month { font-size: 0.9rem; opacity: 0.9; margin-top: 5px; font-weight: 500; }
-    .rp-date-time { font-size: 1.1rem; font-weight: 600; margin-top: 8px; }
+
 </style>
 @endpush
 
@@ -394,8 +421,8 @@
     let currentPreviewUrl = '';
 
     function previewDocument(requestId, documentTypeId, docName) {
-        const url = `/registrar/documents/preview/${requestId}/${documentTypeId}`;
-        currentPreviewUrl = url;
+        let url = "{{ route('registrar.documents.preview', [':requestId', ':documentTypeId']) }}";
+        url = url.replace(':requestId', requestId).replace(':documentTypeId', documentTypeId);
         
         document.getElementById('previewModalTitle').textContent = `Preview: ${docName}`;
         document.getElementById('previewIframe').src = url;
@@ -405,12 +432,6 @@
     function closePreviewModal() {
         document.getElementById('previewModal').style.display = 'none';
         document.getElementById('previewIframe').src = '';
-    }
-
-    function printFromPreview() {
-        if (currentPreviewUrl) {
-            window.open(currentPreviewUrl, '_blank');
-        }
     }
 
     function printSelectedDocuments() {
@@ -430,7 +451,8 @@
             method: 'POST',
             body: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
             }
         })
         .then(response => response.json())
@@ -471,11 +493,13 @@
             cancelButtonText: 'Cancel'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch(`/registrar/requests/${id}/mark-ready`, {
+                const url = `{{ route('registrar.requests.mark-ready', ':id') }}`.replace(':id', id);
+                fetch(url, {
                     method: 'PATCH',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
                 .then(response => response.json())
@@ -488,6 +512,40 @@
                         Swal.fire('Error', data.message || 'Failed to mark as ready', 'error');
                     }
                 });
+            }
+        });
+    }
+
+    function markAsCompleted(id) {
+        Swal.fire({
+            title: 'Mark as Completed?',
+            text: 'This will mark the request as completed and notify the student.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Mark as Completed',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `{{ route('registrar.requests.completed', ':id') }}`.replace(':id', id);
+                
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = '_token';
+                csrf.value = '{{ csrf_token() }}';
+                
+                const method = document.createElement('input');
+                method.type = 'hidden';
+                method.name = '_method';
+                method.value = 'PATCH';
+                
+                form.appendChild(csrf);
+                form.appendChild(method);
+                document.body.appendChild(form);
+                form.submit();
             }
         });
     }
@@ -513,21 +571,40 @@
             const checkedCount = document.querySelectorAll('.doc-checkbox:checked').length;
             if (printBtn) {
                 printBtn.disabled = checkedCount === 0;
+                const container = printBtn.closest('.print-actions');
+                if (container) {
+                    container.style.display = checkedCount > 0 ? 'flex' : 'none';
+                }
             }
         }
     });
 
-    function updateTime() {
-        const now = new Date();
-        let h = now.getHours();
-        const m = String(now.getMinutes()).padStart(2,'0');
-        const s = String(now.getSeconds()).padStart(2,'0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        const el = document.getElementById('live-time');
-        if (el) el.textContent = `${h}:${m}:${s} ${ampm}`;
+    function openPaymentSlipPreview(url) {
+        document.getElementById('previewModalTitle').innerText = 'Payment Slip Preview';
+        document.getElementById('previewIframe').src = url;
+        document.getElementById('previewModal').style.display = 'flex';
     }
-    updateTime();
-    setInterval(updateTime, 1000);
+
+    function printFromPreview() {
+        const iframe = document.getElementById('previewIframe');
+        if (iframe.src) {
+            window.open(iframe.src, '_blank');
+        }
+    }
+
+    function closePreviewModal() {
+        document.getElementById('previewModal').style.display = 'none';
+        document.getElementById('previewIframe').src = '';
+    }
+    function printSingleDocument(itemId) {
+        // Uncheck all first
+        document.querySelectorAll('.doc-checkbox').forEach(cb => cb.checked = false);
+        // Check only this item
+        const checkbox = document.querySelector(`.doc-checkbox[value="${itemId}"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+            printSelectedDocuments();
+        }
+    }
 </script>
 @endpush

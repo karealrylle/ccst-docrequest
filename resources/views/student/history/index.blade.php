@@ -156,7 +156,13 @@
                                         <i class="bi bi-eye me-1"></i>View
                                     </a>
 
-                                    @if($showBook)
+                                    @if($hasActiveAppointment)
+                                    <button type="button"
+                                            class="hist-btn hist-btn--book"
+                                            onclick="openRescheduleModal({{ $appointment->id }}, '{{ $appointment->appointment_date }}', {{ $appointment->time_slot_id }})">
+                                        <i class="bi bi-pencil-square me-1"></i>Edit Appt
+                                    </button>
+                                    @elseif($showBook)
                                     <button type="button"
                                             class="hist-btn hist-btn--book"
                                             onclick="openBookModal({{ $req->id }})">
@@ -247,11 +253,10 @@
 {{-- ══════════════════════════════════════════════════════════════════
      BOOK APPOINTMENT MODAL
 ══════════════════════════════════════════════════════════════════ --}}
-@if($requests->contains(fn($r) => $r->status === 'ready_for_pickup' && is_null($r->appointment)))
 <div id="book-modal-backdrop" class="modal-backdrop-custom" style="display:none;">
     <div class="modal-box">
 
-        <div class="modal-header-custom">
+        <div class="modal-header-custom" id="modal-header-title">
             <i class="bi bi-calendar-check me-2"></i>Book Pickup Appointment
             <button type="button"
                     onclick="closeBookModal()"
@@ -263,13 +268,14 @@
 
         <div class="modal-body-custom">
 
-            <div style="font-size:0.82rem; color:#555; margin-bottom:14px; line-height:1.6;">
+            <div style="font-size:0.82rem; color:#555; margin-bottom:14px; line-height:1.6;" id="modal-subtitle">
                 Choose a date and time slot to pick up your documents.
             </div>
 
             <form id="book-appointment-form" method="POST"
                   action="{{ route('student.appointments.store') }}">
                 @csrf
+                <input type="hidden" name="_method" id="modal-method" value="POST">
                 <input type="hidden" name="document_request_id" id="modal-request-id" value="">
 
                 <div class="form-field mb-3">
@@ -296,7 +302,7 @@
                     <button type="button" onclick="closeBookModal()" class="btn-cancel-sm">
                         Cancel
                     </button>
-                    <button type="submit" class="btn-submit-sm">
+                    <button type="submit" class="btn-submit-sm" id="modal-submit-btn">
                         <i class="bi bi-check-circle me-1"></i>Confirm Booking
                     </button>
                 </div>
@@ -305,7 +311,6 @@
 
     </div>
 </div>
-@endif
 
 
 @endsection
@@ -325,9 +330,8 @@
 
     .req-scroll {
         height: calc(100vh - var(--header-h) - var(--footer-h) - 120px);
-        overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+        overflow-y: auto; overflow-x: hidden;
     }
-    .req-scroll::-webkit-scrollbar { display: none; }
 
     .req-card {
         background: #ffffff; border: 1px solid #D0DDD0;
@@ -365,7 +369,7 @@
     .badge-not-set      { background:#F0F0F0; color:#aaa; }
     .badge-pay-office   { background:#E8F4FD; color:#0969A2; }
 
-    .hist-btn { display:inline-flex; align-items:center; justify-content:center; font-size:0.70rem; font-weight:700; padding:4px 10px; border-radius:4px; border:none; cursor:pointer; text-decoration:none; white-space:nowrap; font-family:'Poppins',sans-serif; transition:opacity 0.15s; width:70px; }
+    .hist-btn { display:inline-flex; align-items:center; justify-content:center; font-size:0.70rem; font-weight:700; padding:4px 10px; border-radius:4px; border:none; cursor:pointer; text-decoration:none; white-space:nowrap; font-family:'Poppins',sans-serif; transition:opacity 0.15s; width:100px; }
     .hist-btn:hover { opacity:0.82; }
     .hist-btn--view     { background:#E8F4FD; color:#0969A2; }
     .hist-btn--upload   { background:#1A9FE0; color:white; }
@@ -389,8 +393,8 @@
     .modal-body-custom { padding:18px 20px; }
     .btn-submit-sm { background:#1A9FE0; color:white; font-weight:700; font-size:0.82rem; padding:8px 20px; border:none; border-radius:6px; cursor:pointer; font-family:'Poppins',sans-serif; transition:background 0.2s; }
     .btn-submit-sm:hover { background:#0D7FBF; }
-    .btn-cancel-sm { background:#f0f0f0; color:#1A1A1A; font-weight:700; font-size:0.82rem; padding:8px 20px; border:none; border-radius:6px; cursor:pointer; font-family:'Poppins',sans-serif; }
-    .btn-cancel-sm:hover { background:#e0e0e0; }
+    .btn-cancel-sm { background:#F5C518; color:#1A1A1A; font-weight:700; font-size:0.82rem; padding:8px 20px; border:none; border-radius:6px; cursor:pointer; font-family:'Poppins',sans-serif; transition: background 0.2s; }
+    .btn-cancel-sm:hover { background:#E0B000; }
 
     .btn-submit { display:inline-flex; align-items:center; background:#1A9FE0; color:white; font-weight:700; font-size:0.85rem; padding:10px 24px; border:none; border-radius:6px; cursor:pointer; text-decoration:none; font-family:'Poppins',sans-serif; transition:background 0.2s; }
     .btn-submit:hover { background:#0D7FBF; color:white; }
@@ -433,8 +437,43 @@ function confirmCancel(requestId, refNumber) {
     });
 }
 
+function closeBookModal() {
+    document.getElementById('book-modal-backdrop').style.display = 'none';
+}
+
 function openBookModal(requestId) {
+    document.getElementById('modal-header-title').innerHTML = '<i class="bi bi-calendar-check me-2"></i>Book Pickup Appointment';
+    document.getElementById('modal-subtitle').textContent = 'Choose a date and time slot to pick up your documents.';
+    document.getElementById('modal-submit-btn').innerHTML = '<i class="bi bi-check-circle me-1"></i>Confirm Booking';
+    document.getElementById('modal-method').value = 'POST';
+    document.getElementById('book-appointment-form').action = "{{ route('student.appointments.store') }}";
+    
     document.getElementById('modal-request-id').value = requestId;
+    document.getElementById('appointment-date-picker').value = '';
+    document.getElementById('time-slot-select').value = '';
+    
+    document.getElementById('book-modal-backdrop').style.display = 'flex';
+}
+
+function openRescheduleModal(appointmentId, date, timeSlotId) {
+    document.getElementById('modal-header-title').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Edit Appointment';
+    document.getElementById('modal-subtitle').textContent = 'Choose a new date and time slot to pick up your documents.';
+    document.getElementById('modal-submit-btn').innerHTML = '<i class="bi bi-check-circle me-1"></i>Save Changes';
+    document.getElementById('modal-method').value = 'PATCH';
+    document.getElementById('book-appointment-form').action = "/student/appointments/" + appointmentId;
+    
+    document.getElementById('modal-request-id').value = ''; // Not needed for reschedule
+    
+    const datePicker = document.getElementById('appointment-date-picker');
+    datePicker.value = date;
+    
+    // If flatpickr is active, update its internal date
+    if (datePicker._flatpickr) {
+        datePicker._flatpickr.setDate(date);
+    }
+    
+    document.getElementById('time-slot-select').value = timeSlotId;
+    
     document.getElementById('book-modal-backdrop').style.display = 'flex';
 }
 

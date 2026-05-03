@@ -1,209 +1,274 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cashier List - {{ $date }}</title>
+    <title>Daily Cashier Receipts - {{ $date }}</title>
     <style>
-        @page {
-            margin: 1.5cm;
+        @page { 
+            size: legal; 
+            margin: 0.3in; 
         }
-        body {
-            font-family: 'Arial', sans-serif;
-            font-size: 11px;
-            line-height: 1.4;
-            color: #333;
+        body { 
+            font-family: 'Helvetica', Arial, sans-serif; 
+            font-size: 8.5pt; 
+            margin: 0; 
+            padding: 0; 
+            color: #333; 
+            line-height: 1.1;
         }
-        .header {
+        
+        .page-container {
+            width: 100%;
+            page-break-after: always;
+        }
+        .page-container:last-child {
+            page-break-after: auto;
+        }
+
+        .half { 
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .perforation {
+            border-top: 1px dashed #999;
+            width: 100%;
             text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #1B6B3A;
-            padding-bottom: 10px;
+            margin: 10px 0;
+            padding: 5px 0;
         }
-        .header h1 {
-            color: #1B6B3A;
-            font-size: 18px;
-            margin: 0 0 5px;
+        .perforation-text {
+            background: white;
+            padding: 0 10px;
+            font-size: 7pt;
+            color: #888;
+            position: relative;
+            top: -10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
+        .logo { width: 40px; height: 40px; }
+        .school-name { font-size: 12pt; font-weight: bold; color: #1565C0; margin-bottom: 1px; }
+        .school-address { font-size: 7pt; color: #666; }
+        
+        .slip-title { 
+            text-align: center; 
+            font-weight: bold; 
+            font-size: 9.5pt; 
+            background-color: #f4f4f4; 
+            padding: 4px; 
+            margin-bottom: 8px;
+            border: 1px solid #ddd;
             text-transform: uppercase;
         }
-        .header h2 {
-            font-size: 14px;
-            margin: 0;
-            font-weight: normal;
-        }
-        .header p {
-            font-size: 10px;
-            color: #666;
-            margin: 5px 0 0;
-        }
-        .info-bar {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            padding: 8px 12px;
-            background: #f5f5f5;
-            border-radius: 6px;
-            font-size: 10px;
-        }
-        table {
+
+        .details-table { width: 100%; border-collapse: collapse; margin-bottom: 5px; table-layout: fixed; }
+        .details-table td { padding: 2px 0; vertical-align: top; }
+        .label { font-weight: bold; width: 100px; font-size: 8pt; }
+        .value { border-bottom: 1px solid #eee; font-size: 8.5pt; }
+
+        .docs-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-top: 5px;
+            font-size: 8pt;
         }
-        th {
-            background: #1B6B3A;
-            color: white;
-            padding: 8px;
+        .docs-table th {
             text-align: left;
-            font-size: 9px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        td {
-            padding: 8px;
+            background-color: #f8f9fa;
             border-bottom: 1px solid #ddd;
-            font-size: 9px;
-            vertical-align: top;
+            padding: 3px 6px;
+            font-weight: bold;
+            color: #1565C0;
         }
-        .checkbox-col {
-            width: 30px;
+        .docs-table td {
+            padding: 3px 6px;
+            border-bottom: 1px dotted #eee;
+        }
+
+        .summary-sig-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+
+        .amount-box {
+            border: 2px solid #1565C0;
+            padding: 4px 12px;
             text-align: center;
-        }
-        .checkbox-col span {
             display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 1px solid #999;
-            background: white;
         }
-        .amount-col {
-            text-align: right;
-            font-weight: bold;
+        .amount-label { font-size: 7pt; color: #666; text-transform: uppercase; }
+        .amount-value { font-size: 13pt; font-weight: bold; color: #1565C0; }
+
+        .signature-line { 
+            border-top: 1px solid #000; 
+            width: 160px; 
+            text-align: center; 
+            font-size: 7.5pt; 
+            margin-top: 40px; 
+            padding-top: 3px; 
+            margin-left: auto;
         }
-        .student-name {
-            font-weight: bold;
-        }
-        .document-list {
-            font-size: 8px;
-            color: #666;
-            margin-top: 2px;
-        }
-        .summary {
-            margin-top: 20px;
-            padding: 10px;
-            background: #f9f9f9;
-            border-left: 3px solid #1B6B3A;
-        }
-        .summary p {
-            margin: 3px 0;
-            font-size: 10px;
-        }
-        .signature-section {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 40px;
-            padding-top: 20px;
-        }
-        .signature-box {
-            text-align: center;
-            width: 200px;
-        }
-        .signature-line {
-            border-top: 1px solid #333;
-            margin-top: 30px;
-            padding-top: 5px;
-            font-size: 9px;
-        }
-        .footer {
-            text-align: center;
-            font-size: 8px;
-            color: #999;
-            margin-top: 30px;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-        }
-        .page-break {
-            page-break-before: always;
-        }
+        
+        .instructions { font-size: 7.5pt; font-style: italic; color: #666; line-height: 1.2; padding-right: 15px; }
+        
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>CLARK COLLEGE OF SCIENCE AND TECHNOLOGY</h1>
-        <h2>Cashier Payment Receipts</h2>
-        <p>{{ $date }}</p>
-    </div>
 
-    <div class="info-bar">
-        <span><strong>Printed By:</strong> {{ $printed_by }}</span>
-        <span><strong>Generated:</strong> {{ now()->format('h:i A') }}</span>
-        <span><strong>Total Students:</strong> {{ $totalStudents }}</span>
-        <span><strong>Total Amount:</strong> ₱{{ number_format($totalAmount, 2) }}</span>
-    </div>
+    @foreach($appointments as $appointment)
+    <div class="page-container">
+        <!-- TOP HALF -->
+        <div class="half">
+            <table class="header-table">
+                <tr>
+                    <td style="width: 45px;"><img src="{{ public_path('images/ccst-logo.png') }}" alt="CCST Logo" class="logo"></td>
+                    <td style="text-align: center;">
+                        <div class="school-name">Clark College of Science and Technology</div>
+                        <div class="school-address">SNS Bldg., Aurea St., Samsonville Subdivision, Dau, Mabalacat City, Pampanga</div>
+                    </td>
+                    <td style="width: 45px;"></td>
+                </tr>
+            </table>
 
-    <table>
-        <thead>
-            <tr>
-                <th class="checkbox-col">PAID</th>
-                <th style="width: 12%">Date</th>
-                <th style="width: 12%">Time Slot</th>
-                <th style="width: 20%">Student Name</th>
-                <th style="width: 12%">Student No.</th>
-                <th style="width: 15%">Reference No.</th>
-                <th style="width: 12%">Documents</th>
-                <th class="amount-col" style="width: 10%">Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($appointments as $appointment)
-            <tr>
-                <td class="checkbox-col"><span>☐</span></td>
-                <td>{{ $appointment->date }}</td>
-                <td>{{ $appointment->time_slot }}</td>
-                <td>
-                    <div class="student-name">{{ $appointment->student_name }}</div>
-                    <div class="document-list">{{ $appointment->strand }} | {{ $appointment->grade_section }}</div>
-                </td>
-                <td>{{ $appointment->student_number }}</td>
-                <td>{{ $appointment->reference_number }}</td>
-                <td>
-                    <div style="font-size: 8px;">{{ $appointment->documents }}</div>
-                </td>
-                <td class="amount-col">₱{{ number_format($appointment->amount, 2) }}</td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="8" style="text-align: center; padding: 30px;">
-                    No appointments found for the selected period.
-                </td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
+            <div class="slip-title">STUDENT PAYMENT RECEIPT – PRESENT TO REGISTRAR AFTER PAYMENT</div>
 
-    <div class="summary">
-        <p><strong>SUMMARY:</strong></p>
-        <p>Total Students: {{ $totalStudents }}</p>
-        <p>Total Collection: ₱{{ number_format($totalAmount, 2) }}</p>
-    </div>
+            <table class="details-table">
+                <tr>
+                    <td class="label">Reference Number:</td>
+                    <td class="value" style="font-weight: bold; color: #1565C0;">{{ $appointment->reference_number }}</td>
+                    <td class="label" style="padding-left: 15px; width: 90px;">Request Date:</td>
+                    <td class="value">{{ $appointment->date }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Student Name:</td>
+                    <td class="value">{{ strtoupper($appointment->student_name) }}</td>
+                    <td class="label" style="padding-left: 15px; width: 90px;">Student Number:</td>
+                    <td class="value">{{ $appointment->student_number }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Appointment Date:</td>
+                    <td class="value">{{ $appointment->date }}</td>
+                    <td class="label" style="padding-left: 15px; width: 90px;">Request Type:</td>
+                    <td class="value"><strong>{{ $appointment->request_type }}</strong></td>
+                </tr>
+            </table>
 
-    <div class="signature-section">
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div>Cashier Signature</div>
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>Document Description</th>
+                        <th style="text-align: center; width: 40px;">Qty</th>
+                        <th style="text-align: right; width: 80px;">Fee</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($appointment->requested_documents as $doc)
+                    <tr>
+                        <td>{{ $doc->documentType->name }}</td>
+                        <td style="text-align: center;">{{ $doc->copies }}</td>
+                        <td style="text-align: right;">PHP {{ number_format($doc->fee, 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+
+            <table class="summary-sig-table">
+                <tr>
+                    <td style="vertical-align: top; padding-top: 5px;">
+                        <div class="instructions">
+                            <strong>Note:</strong> Present this receipt to the Registrar after payment. Ensure both halves are stamped.
+                        </div>
+                    </td>
+                    <td style="text-align: right; width: 200px;">
+                        <div class="amount-box">
+                            <div class="amount-label">Total to Pay</div>
+                            <div class="amount-value">PHP {{ number_format($appointment->amount, 2) }}</div>
+                        </div>
+                        <div class="signature-line">CASHIER SIGNATURE & STAMP</div>
+                    </td>
+                </tr>
+            </table>
         </div>
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div>Date</div>
-        </div>
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div>Registrar Signature</div>
-        </div>
-    </div>
 
-    <div class="footer">
-        <p>Instructions: Mark ☐ after collecting payment. Give the stamped receipt to student.</p>
-        <p>© {{ date('Y') }} CCST Document Request and Tracking System</p>
+        <!-- PERFORATION -->
+        <div class="perforation">
+            <span class="perforation-text">✂ CUT HERE – PERFORATION LINE ✂</span>
+        </div>
+
+        <!-- BOTTOM HALF -->
+        <div class="half">
+            <table class="header-table">
+                <tr>
+                    <td style="width: 45px;"><img src="{{ public_path('images/ccst-logo.png') }}" alt="CCST Logo" class="logo"></td>
+                    <td style="text-align: center;">
+                        <div class="school-name">Clark College of Science and Technology</div>
+                        <div class="school-address">OFFICE OF THE CASHIER</div>
+                    </td>
+                    <td style="width: 45px;"></td>
+                </tr>
+            </table>
+
+            <div class="slip-title">CASHIER’S RECORD COPY – RETAIN BY CASHIER</div>
+
+            <table class="details-table">
+                <tr>
+                    <td class="label">Reference Number:</td>
+                    <td class="value" style="font-weight: bold;">{{ $appointment->reference_number }}</td>
+                    <td class="label" style="padding-left: 15px; width: 90px;">Payment Date:</td>
+                    <td class="value">{{ date('F d, Y') }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Student Name:</td>
+                    <td class="value">{{ strtoupper($appointment->student_name) }}</td>
+                    <td class="label" style="padding-left: 15px; width: 90px;">Payment Time:</td>
+                    <td class="value">{{ now()->format('h:i A') }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Student Number:</td>
+                    <td class="value">{{ $appointment->student_number }}</td>
+                    <td class="label" style="padding-left: 15px; width: 90px;">Request Type:</td>
+                    <td class="value"><strong>{{ $appointment->request_type }}</strong></td>
+                </tr>
+            </table>
+
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>Document Description</th>
+                        <th style="text-align: center; width: 40px;">Qty</th>
+                        <th style="text-align: right; width: 80px;">Fee</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($appointment->requested_documents as $doc)
+                    <tr>
+                        <td>{{ $doc->documentType->name }}</td>
+                        <td style="text-align: center;">{{ $doc->copies }}</td>
+                        <td style="text-align: right;">PHP {{ number_format($doc->fee, 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+
+            <table class="summary-sig-table">
+                <tr>
+                    <td style="vertical-align: top; padding-top: 5px;">
+                        <div style="font-size: 8pt; font-weight: bold;">OR Number:</div>
+                        <div style="border-bottom: 1px solid #ccc; height: 20px; width: 250px;"></div>
+                        <div class="instructions" style="margin-top: 8px;">* Internal audit copy. Record OR Number.</div>
+                    </td>
+                    <td style="text-align: right; width: 200px;">
+                        <div class="amount-box" style="border-color: #333;">
+                            <div class="amount-label">Amount Collected</div>
+                            <div class="amount-value">PHP {{ number_format($appointment->amount, 2) }}</div>
+                        </div>
+                        <div class="signature-line">CASHIER SIGNATURE & STAMP</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
     </div>
+    @endforeach
+
 </body>
 </html>

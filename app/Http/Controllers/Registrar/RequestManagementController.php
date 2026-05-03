@@ -20,16 +20,16 @@ class RequestManagementController extends Controller
     {
         $requests = DocumentRequest::with(['items.documentType', 'appointment.timeSlot', 'user'])
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(100);
 
         $totalRequests = DocumentRequest::count();
         $pendingCount = DocumentRequest::whereIn('status', ['pending', 'payment_method_set', 'payment_uploaded', 'payment_rejected'])->count();
         $readyCount = DocumentRequest::where('status', 'ready_for_pickup')->count();
-        $receivedCount = DocumentRequest::where('status', 'received')->count();
+        $completedCount = DocumentRequest::where('status', 'completed')->count();
         $cancelledCount = DocumentRequest::where('status', 'cancelled')->count();
 
         return view('registrar.requests.index', compact(
-            'requests', 'totalRequests', 'pendingCount', 'readyCount', 'receivedCount', 'cancelledCount'
+            'requests', 'totalRequests', 'pendingCount', 'readyCount', 'completedCount', 'cancelledCount'
         ));
     }
 
@@ -100,20 +100,19 @@ class RequestManagementController extends Controller
         return redirect()->route('registrar.requests.index');
     }
 
-    public function markReceived($id)
+    public function markAsCompleted($id)
     {
         $docRequest = DocumentRequest::findOrFail($id);
 
         if ($docRequest->status !== 'ready_for_pickup') {
-            // Send notification instead of error banner
-            $message = "❌ Cannot mark as received. Request must be 'Ready for Pickup' first.";
+            $message = "❌ Cannot mark as completed. Request must be 'Ready for Pickup' first.";
             $this->sendNotificationToCurrentUser($message, route('registrar.requests.index'));
-            session()->flash('check_notifications', true);
-            
             return redirect()->route('registrar.requests.index');
         }
 
-        $docRequest->status = 'received';
+        $oldStatus = $docRequest->status;
+        $docRequest->status = 'completed';
+        $docRequest->completed_at = now();
         $docRequest->save();
 
         // Update appointment if exists
@@ -128,63 +127,31 @@ class RequestManagementController extends Controller
         StatusLog::create([
             'document_request_id' => $docRequest->id,
             'changed_by' => Auth::id(),
-            'old_status' => 'ready_for_pickup',
-            'new_status' => 'received',
-            'notes' => "Documents received by student. Claiming number verified.",
+            'old_status' => $oldStatus,
+            'new_status' => 'completed',
+            'notes' => "Request marked as completed. Student picked up their documents.",
         ]);
 
-        // Send notification to STUDENT
+        // Send notification to STUDENT (Email + Database)
         $student = $docRequest->user;
         if ($student) {
-            $message = "✅ Your documents for request {$docRequest->reference_number} have been received. Thank you for using CCST DocRequest!";
-            $url = route('student.requests.history');
-            $this->sendNotification($student, $message, $url);
+            $student->notify(new RequestCompletedNotification($docRequest));
         }
 
-        // Send notification to REGISTRAR
-        $registrarMessage = "✅ Request {$docRequest->reference_number} has been marked as RECEIVED. Student picked up their documents.";
+        // Send notification to REGISTRAR (Database)
+        $registrarMessage = "✅ Request {$docRequest->reference_number} marked as COMPLETED.";
         $this->sendNotificationToCurrentUser($registrarMessage, route('registrar.requests.show', $docRequest->id));
         
         session()->flash('check_notifications', true);
 
-        return redirect()->route('registrar.requests.index');
-    }
-
-    /**
-     * Mark request as completed (after printing)
-     */
-    public function markAsCompleted($id)
-    {
-        $docRequest = DocumentRequest::findOrFail($id);
-        
-        $oldStatus = $docRequest->status;
-        $docRequest->update([
-            'status' => 'completed',
-            'completed_at' => now(),
-        ]);
-        
-        // Log status change
-        StatusLog::create([
-            'document_request_id' => $docRequest->id,
-            'changed_by' => Auth::id(),
-            'old_status' => $oldStatus,
-            'new_status' => 'completed',
-            'notes' => 'Request marked as completed.',
-        ]);
-        
-        // Send database + email notification to student
-        $student = $docRequest->user;
-        if ($student) {
-            $message = "✅ Your documents for request {$docRequest->reference_number} have been completed. Thank you for using CCST DocRequest!";
-            $url = route('student.requests.history');
-            $this->sendNotification($student, $message, $url);
-            $student->notify(new RequestCompletedNotification($docRequest));
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Request marked as completed.'
+            ]);
         }
-        
-        session()->flash('check_notifications', true);
-        
-        return redirect()->route('registrar.requests.index')
-            ->with('success', 'Request marked as completed.');
+
+        return redirect()->route('registrar.requests.index');
     }
 
     /**
@@ -203,6 +170,7 @@ class RequestManagementController extends Controller
         
         $oldStatus = $docRequest->status;
         $docRequest->status = 'ready_for_pickup';
+        $docRequest->save(); // CRITICAL: Save the change
         
         // Log status change
         \App\Models\StatusLog::create([
@@ -216,20 +184,21 @@ class RequestManagementController extends Controller
         // Send database + email notification to student
         $student = $docRequest->user;
         if ($student) {
-            $message = "📦 Your request {$docRequest->reference_number} is ready for pickup! Please proceed to the registrar's office to claim your documents.";
-            $url = route('student.requests.history');
-            $this->sendNotification($student, $message, $url);
             $student->notify(new DocumentReadyNotification($docRequest));
+        } elseif ($docRequest->is_walk_in && $docRequest->email) {
+            // Send email to walk-in student
+            \Illuminate\Support\Facades\Notification::route('mail', $docRequest->email)
+                ->notify(new \App\Notifications\WalkInDocumentReadyNotification($docRequest));
         }
 
-        if (request()->ajax()) {
+        session()->flash('check_notifications', true);
+
+        if (request()->ajax() || request()->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Request marked as ready for pickup.'
             ]);
         }
-
-        session()->flash('check_notifications', true);
         
         return back()->with('success', 'Request marked as ready for pickup.');
     }
@@ -255,7 +224,9 @@ class RequestManagementController extends Controller
         $request = DocumentRequest::with(['items.documentType', 'user'])->findOrFail($id);
         
         if ($request->payment_status === 'paid') {
-            return back()->with('error', 'Payment already recorded for this request.');
+            // Just return the PDF if already paid
+            $pdf = Pdf::loadView('registrar.walkin.receipt-pdf', ['request' => $request]);
+            return $pdf->stream('receipt-'.$request->reference_number.'.pdf');
         }
 
         // Update payment status and set status to ready_for_pickup if it's pending and not printable
@@ -284,5 +255,29 @@ class RequestManagementController extends Controller
         // Generate receipt PDF
         $pdf = Pdf::loadView('registrar.walkin.receipt-pdf', ['request' => $request]);
         return $pdf->download('receipt-'.$request->reference_number.'.pdf');
+    }
+
+    /**
+     * Print the cashier payment slip / receipt for any request
+     */
+    public function printCashierReceipt($id)
+    {
+        $request = DocumentRequest::with(['items.documentType', 'appointment.timeSlot'])->findOrFail($id);
+        
+        // Prepare data for the cashier-payment-slip template
+        $data = [
+            'student_name' => $request->full_name,
+            'student_number' => $request->student_number ?? ($request->is_walk_in ? 'WALK-IN' : 'N/A'),
+            'reference_number' => $request->reference_number,
+            'request_date' => $request->created_at->format('F d, Y'),
+            'total_fee' => $request->total_fee,
+            'requested_documents' => $request->items,
+            'request_type' => $request->is_walk_in ? 'WALK-IN' : 'ONLINE',
+            'appointment_date' => $request->appointment ? $request->appointment->appointment_date->format('F d, Y') : ($request->is_walk_in ? 'WALK-IN' : 'N/A'),
+            'current_time' => now()->format('h:i A'),
+        ];
+
+        $pdf = Pdf::loadView('pdf.cashier-payment-slip', $data);
+        return $pdf->stream('payment-slip-'.$request->reference_number.'.pdf');
     }
 }

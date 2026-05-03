@@ -248,20 +248,25 @@ class DocumentGeneratorController extends Controller
      */
     public function preview($requestId, $documentTypeId)
     {
-        $documentRequest = DocumentRequest::with(['user', 'items.documentType'])
-            ->findOrFail($requestId);
-        
-        $documentType = DocumentType::findOrFail($documentTypeId);
-        
-        $requestedItem = $documentRequest->items->firstWhere('document_type_id', $documentTypeId);
-        if (!$requestedItem) {
-            return response()->json(['error' => 'This document was not requested.'], 404);
+        try {
+            $documentRequest = DocumentRequest::with(['user', 'items.documentType'])
+                ->findOrFail($requestId);
+            
+            $documentType = DocumentType::findOrFail($documentTypeId);
+            
+            $requestedItem = $documentRequest->items->firstWhere('document_type_id', $documentTypeId);
+            if (!$requestedItem) {
+                return response()->json(['error' => 'This document was not requested.'], 404);
+            }
+            
+            $data = $this->prepareDocumentData($documentRequest, $documentType, $requestedItem);
+            $pdf = $this->loadTemplate($documentType->code, $data);
+            
+            return $pdf->stream($documentType->code . '_preview.pdf');
+        } catch (\Exception $e) {
+            \Log::error('PDF Preview Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to generate preview: ' . $e->getMessage()], 500);
         }
-        
-        $data = $this->prepareDocumentData($documentRequest, $documentType, $requestedItem);
-        $pdf = $this->loadTemplate($documentType->code, $data);
-        
-        return $pdf->stream($documentType->code . '_preview.pdf');
     }
 
     /**
@@ -297,11 +302,11 @@ class DocumentGeneratorController extends Controller
             // Student Information
             'student_name' => $documentRequest->full_name,
             'student_number' => $documentRequest->student_number,
-            'strand' => $user->strand,
-            'grade_level' => $user->grade_level,
-            'section' => $user->section,
-            'contact_number' => $user->contact_number,
-            'address' => $user->address,
+            'strand' => $documentRequest->course_program,
+            'grade_level' => $documentRequest->year_level,
+            'section' => $documentRequest->section,
+            'contact_number' => $documentRequest->contact_number,
+            'address' => $documentRequest->address,
             
             // Document-specific
             'document_name' => $documentType->name,
@@ -339,13 +344,27 @@ class DocumentGeneratorController extends Controller
         switch (strtoupper($documentCode)) {
             case 'COE':
                 return Pdf::loadView('pdf.coe-template', $data);
+            case 'TC':
+                return Pdf::loadView('pdf.tc-template', $data);
             case 'GMC':
             case 'CGMC':
-                return Pdf::loadView('pdf.cgmc-template', $data);
+                return Pdf::loadView('pdf.certificate-of-good-moral', $data);
             case 'REG':
-                return Pdf::loadView('pdf.reg-template', $data);
+                return Pdf::loadView('pdf.registration-form', $data);
             case 'COG':
                 return Pdf::loadView('pdf.cog-template', $data);
+            case 'CCOMP':
+                return Pdf::loadView('pdf.certificate-of-completion', $data);
+            case 'CGRAD':
+                return Pdf::loadView('pdf.certificate-of-graduation', $data);
+            case 'CRANK':
+                return Pdf::loadView('pdf.certificate-of-ranking', $data);
+            case 'CLID':
+                return Pdf::loadView('pdf.certificate-of-lost-id', $data);
+            case 'CGWA':
+                return Pdf::loadView('pdf.certificate-of-gwa', $data);
+            case 'F138':
+                return Pdf::loadView('pdf.f138-template', $data);
             case 'TOR':
                 return Pdf::loadView('pdf.tor-template', $data);
             default:
@@ -358,6 +377,12 @@ class DocumentGeneratorController extends Controller
      */
     private function getStudentGrades($user)
     {
+        if (!$user) {
+            return [
+                'subjects' => [],
+                'average' => 'N/A'
+            ];
+        }
         // TODO: Implement grade management system
         return [
             'subjects' => [

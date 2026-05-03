@@ -41,8 +41,8 @@ class DocumentReadyNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'message' => 'Your document request (' . $this->docRequest->reference_number . ') is ready for pickup!',
-            'url' => '/student/requests/' . $this->docRequest->id,
+            'message' => '📦 Your request ' . $this->docRequest->reference_number . ' is ready for pickup!',
+            'url' => route('student.requests.show', $this->docRequest->id, false),
             'type' => 'document_ready',
         ];
     }

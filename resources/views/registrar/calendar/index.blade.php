@@ -4,93 +4,55 @@
 
 @section('content')
 
-<div class="calendar-header">
-    <div class="calendar-title-section">
-        <h1 class="calendar-title">Appointment Calendar</h1>
+<div class="registrar-sticky-header">APPOINTMENT CALENDAR</div>
+
+<div class="calendar-layout-wrapper">
+    <div class="calendar-filters" style="margin-bottom: 20px;">
+        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; width: 100%;">
+            {{-- Search Bar --}}
+            <div class="search-box-wrapper" style="flex: 1; min-width: 250px;">
+                <div class="search-box" style="background: white; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; display: flex; align-items: center;">
+                    <i class="bi bi-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
+                    <input type="text" id="calendarSearchInput" placeholder="Search by reference number or student name..." style="width: 100%; border: none; padding-left: 36px; background: transparent; box-shadow: none; outline: none; font-size: 0.95rem; color: #1A1A1A;">
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="calendar-actions">
-        <div style="position: relative; display: inline-block;">
-            <button class="btn-print-list" onclick="document.getElementById('printDropdown').style.display = document.getElementById('printDropdown').style.display === 'block' ? 'none' : 'block'" style="background: #1B6B3A; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <i class="bi bi-printer"></i> Print Appointments ▼
-            </button>
-            <div id="printDropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 5px); background: white; min-width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; border: 1px solid #eee; z-index: 1000;">
-                <a href="javascript:void(0)" onclick="printRange('today')" style="display: block; padding: 10px 15px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;">Today</a>
-                <a href="javascript:void(0)" onclick="printRange('last_week')" style="display: block; padding: 10px 15px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;">Last Week</a>
-                <a href="javascript:void(0)" onclick="printRange('last_month')" style="display: block; padding: 10px 15px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;">Last Month</a>
-                <a href="javascript:void(0)" onclick="printRange('last_year')" style="display: block; padding: 10px 15px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;">Last Year</a>
-                <a href="javascript:void(0)" onclick="printRange('all')" style="display: block; padding: 10px 15px; color: #333; text-decoration: none;">All Time</a>
+
+    <div style="display: flex; gap: 20px; align-items: stretch; min-height: 600px;">
+        {{-- Left Side: Calendar --}}
+        <div style="flex: 5; min-width: 0;">
+            <div class="calendar-container" style="height: 100%; display: flex; flex-direction: column;">
+                <div id="calendar" style="flex: 1;"></div>
+                <div class="time-slot-legend-horizontal" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #E5E7EB;">
+                    <div class="legend-item"><span class="legend-dot legend-dot-red"></span> <span class="legend-text">Pending</span></div>
+                    <div class="legend-item"><span class="legend-dot legend-dot-yellow"></span> <span class="legend-text">Processing</span></div>
+                    <div class="legend-item"><span class="legend-dot legend-dot-orange"></span> <span class="legend-text">Ready for Pickup</span></div>
+                    <div class="legend-item"><span class="legend-dot legend-dot-green"></span> <span class="legend-text">Received</span></div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span> <span class="legend-text">Completed</span></div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#6B7280;"></span> <span class="legend-text">Declined</span></div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Right Side: Time Slots --}}
+        <div style="flex: 3; min-width: 0;">
+            <div class="ccst-card" style="border: 1px solid #D0DDD0; height: 100%; display: flex; flex-direction: column; margin: 0;">
+                <div class="ccst-card-header blue" style="display: flex; justify-content: space-between; align-items: center; background: #1A9FE0;">
+                    <span><i class="bi bi-clock-history me-2"></i> Time Slots</span>
+                    <button class="btn-add-timeslot" onclick="openTimeSlotModal()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.1rem; padding: 0 4px;">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+                <div class="ccst-card-body p-0" id="timeSlotsList" style="flex: 1; overflow-y: auto;">
+                    <div class="rp-stat-row text-muted" style="padding: 14px 16px; color: #666 !important;">Loading time slots...</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="calendar-filters" style="margin-bottom: 20px;">
-    <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; width: 100%;">
-        {{-- Search Bar --}}
-        <div class="search-box-wrapper" style="flex: 1; min-width: 250px;">
-            <div class="search-box" style="background: white; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; display: flex; align-items: center;">
-                <i class="bi bi-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
-                <input type="text" id="calendarSearchInput" placeholder="Search by reference number or student name..." style="width: 100%; border: none; padding-left: 36px; background: transparent; box-shadow: none; outline: none; font-size: 0.95rem; color: #1A1A1A;">
-            </div>
-        </div>
-    </div>
-</div>
 
-<div style="display: flex; gap: 20px; align-items: flex-start;">
-    {{-- Left Side: Time Slots --}}
-    <div style="flex: 1; min-width: 0;">
-        <div class="ccst-card mb-4" style="border: 1px solid #D0DDD0; height: 100%;">
-            <div class="ccst-card-header blue" style="display: flex; justify-content: space-between; align-items: center; background: #1A9FE0;">
-                <span><i class="bi bi-clock-history me-2"></i> Time Slots</span>
-                <button class="btn-add-timeslot" onclick="openTimeSlotModal()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.1rem; padding: 0 4px;">
-                    <i class="bi bi-plus-lg"></i>
-                </button>
-            </div>
-            <div class="ccst-card-body p-0" id="timeSlotsList">
-                <div class="rp-stat-row text-muted" style="padding: 14px 16px; color: #666 !important;">Loading time slots...</div>
-            </div>
-            <div class="time-slot-legend px-4 py-3">
-                <div class="legend-item"><span class="legend-dot legend-dot-red"></span> Pending</div>
-                <div class="legend-item"><span class="legend-dot legend-dot-yellow"></span> Processing</div>
-                <div class="legend-item"><span class="legend-dot legend-dot-orange"></span> Ready for Pickup</div>
-                <div class="legend-item"><span class="legend-dot legend-dot-green"></span> Received</div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Right Side: Calendar --}}
-    <div style="flex: 1; min-width: 0;">
-        <div class="calendar-container">
-            <div id="calendar"></div>
-        </div>
-    </div>
-</div>
-
-{{-- Custom Month/Year Picker Popup --}}
-<div id="monthYearPickerPopup" style="display: none; position: fixed; z-index: 99999; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 1px solid #D0DDD0;">
-    <div style="display: flex; gap: 6px; margin-bottom: 8px;">
-        <select id="popupMonthSelect" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; outline: none; font-size: 0.85rem;">
-            <option value="0">January</option>
-            <option value="1">February</option>
-            <option value="2">March</option>
-            <option value="3">April</option>
-            <option value="4">May</option>
-            <option value="5">June</option>
-            <option value="6">July</option>
-            <option value="7">August</option>
-            <option value="8">September</option>
-            <option value="9">October</option>
-            <option value="10">November</option>
-            <option value="11">December</option>
-        </select>
-        <select id="popupYearSelect" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; outline: none; font-size: 0.85rem;">
-        </select>
-    </div>
-    <div style="text-align: right;">
-        <button id="popupCancelBtn" style="background: none; border: none; padding: 4px 8px; cursor: pointer; color: #666; font-size: 0.8rem;">Cancel</button>
-        <button id="popupApplyBtn" style="background: #1B6B3A; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">Go</button>
-    </div>
-</div>
 
 {{-- Appointment Details Modal --}}
 <div id="appointmentModal" class="modal-overlay" style="display:none;">
@@ -128,7 +90,6 @@
         <div class="modal-footer-custom" id="modalActions">
             <button type="button" class="btn-complete" onclick="markCompleted()">Mark Completed</button>
             <button type="button" class="btn-missed" onclick="markMissed()">Mark Missed</button>
-            <button type="button" class="btn-cancel-modal" onclick="closeAppointmentModal()">Close</button>
         </div>
     </div>
 </div>
@@ -153,9 +114,6 @@
         </div>
         <div class="modal-body-custom" style="max-height:420px;overflow-y:auto;" id="dayModalBody">
             <p class="text-muted">Loading...</p>
-        </div>
-        <div class="modal-footer-custom">
-            <button type="button" class="btn-cancel-modal" onclick="closeDayModal()">Close</button>
         </div>
     </div>
 </div>
@@ -230,17 +188,27 @@
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
 <style>
-    .calendar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    .registrar-sticky-header {
+        background: #1B6B3A;
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-align: center;
+        padding: 10px 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: relative; /* Changed to relative so it scrolls with content */
         margin-bottom: 20px;
+        margin-left: -24px;
+        margin-right: -24px;
+        margin-top: -28px;
+        width: calc(100% + 48px);
     }
 
-    .calendar-title-section {
-        display: flex;
-        align-items: center;
-        gap: 16px;
+    .calendar-layout-wrapper {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
     }
 
     .calendar-title {
@@ -474,38 +442,47 @@
     }
 
     .fc-toolbar-title {
-        font-size: 1.2rem;
-        font-weight: 700;
+        font-size: 1.1rem;
+        font-weight: 600;
         color: #1B6B3A;
-        margin: 0;
-        cursor: pointer;
-        position: relative;
-        padding-right: 15px;
+        margin: 0 20px !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
         display: inline-block;
-    }
-    
-    .fc-toolbar-title::after {
-        content: "▼";
-        font-size: 0.6em;
-        opacity: 0.6;
-        position: absolute;
-        right: 0;
-        top: 50%;
-        transform: translateY(-50%);
+        vertical-align: middle;
     }
 
-    .fc-button-primary {
-        background-color: #1A9FE0 !important;
-        border-color: #1A9FE0 !important;
+    .fc-toolbar {
+        display: flex;
+        justify-content: center !important;
+        margin-bottom: 25px !important;
+    }
+
+    .fc-toolbar-chunk {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .fc-button-primary, 
+    .fc-button-primary:hover, 
+    .fc-button-primary:active, 
+    .fc-button-primary:focus,
+    .fc-button {
+        background: transparent !important;
+        border: none !important;
+        color: #1B6B3A !important;
+        box-shadow: none !important;
+        padding: 0 10px !important;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        outline: none !important;
     }
 
     .fc-button-primary:hover {
-        background-color: #0D7FBF !important;
-        border-color: #0D7FBF !important;
-    }
-
-    .fc-button-primary:focus {
-        box-shadow: none !important;
+        color: #166534 !important;
+        transform: scale(1.1);
+        transition: transform 0.2s;
     }
 
     .fc-day-today {
@@ -707,21 +684,27 @@
         background-color: #28A745; /* Green for received */
     }
 
-    .time-slot-legend {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        background: #F8FAF8;
-        border-top: 1px solid #E5E7EB;
+    .time-slot-legend-horizontal {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        background: white;
+        border-radius: 8px;
     }
 
-    .time-slot-legend .legend-item {
+    .legend-item {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 0.82rem;
-        color: #334155;
-        padding: 6px 0;
+    }
+
+    .legend-text {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #4B5563;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .legend-dot {
@@ -761,9 +744,9 @@
     }
 
     .slot-action-btn {
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
+        background: #F0F0F0;
+        border: 1px solid #DDD;
+        color: #555;
         width: 28px;
         height: 28px;
         border-radius: 6px;
@@ -775,16 +758,25 @@
     }
 
     .slot-action-btn:hover {
-        background: rgba(255,255,255,0.4);
+        background: #E0E0E0;
+    }
+
+    .slot-action-btn.edit-slot:hover {
+        background: #1A9FE0;
+        color: white;
+        border-color: #0D7FBF;
     }
 
     .slot-action-btn.delete-slot:hover {
         background: #DC3545;
+        color: white;
+        border-color: #BD2130;
     }
 
     .slot-action-btn.toggle-slot:hover {
         background: #F5C518;
         color: #1A1A1A;
+        border-color: #D4A710;
     }
 
     .btn-add-timeslot {
@@ -885,11 +877,16 @@
         margin-top: 2px;
     }
     .req-dot {
-        width: 8px;
-        height: 8px;
+        width: 18px;
+        height: 18px;
         border-radius: 50%;
-        display: inline-block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: white;
     }
     .request-summary-wrapper {
         display: flex;
@@ -1069,30 +1066,17 @@
             if (!eventsContainer) return;
 
             const dots = [];
-            if (info.pending.length) dots.push('<span class="req-dot" style="background:#DC3545;" title="Pending"></span>');
-            if (info.approved && info.approved.length) dots.push('<span class="req-dot" style="background:#F97316;" title="Approved"></span>');
-            if (info.processing.length) dots.push('<span class="req-dot" style="background:#F97316;" title="Processing"></span>');
-            if (info.ready.length)   dots.push('<span class="req-dot" style="background:#22c55e;" title="Ready for Pickup"></span>');
-            if (info.completed.length) dots.push('<span class="req-dot" style="background:#3b82f6;" title="Completed"></span>');
-            if (info.declined.length) dots.push('<span class="req-dot" style="background:#6B7280;" title="Declined"></span>');
+            if (info.pending.length) dots.push('<span class="req-dot" style="background:#DC3545;" title="Pending">' + info.pending.length + '</span>');
+            if (info.approved && info.approved.length) dots.push('<span class="req-dot" style="background:#F97316;" title="Approved">' + info.approved.length + '</span>');
+            if (info.processing.length) dots.push('<span class="req-dot" style="background:#F97316;" title="Processing">' + info.processing.length + '</span>');
+            if (info.ready.length)   dots.push('<span class="req-dot" style="background:#22c55e;" title="Ready for Pickup">' + info.ready.length + '</span>');
+            if (info.completed.length) dots.push('<span class="req-dot" style="background:#3b82f6;" title="Completed">' + info.completed.length + '</span>');
+            if (info.declined.length) dots.push('<span class="req-dot" style="background:#6B7280;" title="Declined">' + info.declined.length + '</span>');
 
             let dotsHtml = '<div class="req-dot-bar">' + dots.join('') + '</div>';
 
-            const summary = [];
-            if (info.pending.length) summary.push('<span class="request-summary-badge request-summary-pending">' + info.pending.length + ' pending</span>');
-            if (info.approved && info.approved.length) summary.push('<span class="request-summary-badge request-summary-processing">' + info.approved.length + ' approved</span>');
-            if (info.processing.length) summary.push('<span class="request-summary-badge request-summary-processing">' + info.processing.length + ' processing</span>');
-            if (info.ready.length)   summary.push('<span class="request-summary-badge request-summary-ready">' + info.ready.length + ' ready</span>');
-            if (info.completed.length) summary.push('<span class="request-summary-badge request-summary-completed">' + info.completed.length + ' completed</span>');
-            if (info.declined.length) summary.push('<span class="request-summary-badge request-summary-declined">' + info.declined.length + ' declined</span>');
-
-            let summaryHtml = '';
-            if (summary.length) {
-                summaryHtml = '<div class="request-summary-wrapper">' + summary.join('') + '</div>';
-            }
-
-            if (dots.length || summary.length) {
-                eventsContainer.insertAdjacentHTML('beforeend', dotsHtml + summaryHtml);
+            if (dots.length) {
+                eventsContainer.insertAdjacentHTML('beforeend', dotsHtml);
             }
         });
     }
@@ -1426,8 +1410,8 @@
             initialView: 'dayGridMonth',
             headerToolbar: {
                 left: '',
-                center: 'title',
-                right: 'prev,next'
+                center: 'prev,title,next',
+                right: ''
             },
             editable: true,
             eventSources: [
@@ -1439,25 +1423,6 @@
             ],
             datesSet: function(info) {
                 fetchRequestsByDate(info.startStr.slice(0,10), info.endStr.slice(0,10));
-                
-                // Add click-to-pick-month/year feature to the calendar title
-                const titleEl = document.querySelector('.fc-toolbar-title');
-                if (titleEl) {
-                    titleEl.title = 'Click to choose month and year';
-                    
-                    titleEl.onclick = function(e) {
-                        const popup = document.getElementById('monthYearPickerPopup');
-                        const rect = titleEl.getBoundingClientRect();
-                        
-                        popup.style.top = (rect.bottom + 5) + 'px';
-                        popup.style.left = (rect.left + (rect.width/2) - 100) + 'px';
-                        
-                        document.getElementById('popupMonthSelect').value = calendar.getDate().getMonth();
-                        document.getElementById('popupYearSelect').value = calendar.getDate().getFullYear();
-                        
-                        popup.style.display = 'block';
-                    };
-                }
             },
             eventDidMount: function(info) {
                 // Re-render dots after events render
@@ -1516,30 +1481,6 @@
         setupCalendarFilters();
         loadTimeSlots();
         
-        // Initialize Popup Logic
-        const popupYearSelect = document.getElementById('popupYearSelect');
-        const currY = new Date().getFullYear();
-        for (let y = currY - 5; y <= currY + 5; y++) {
-            popupYearSelect.innerHTML += `<option value="${y}">${y}</option>`;
-        }
-        
-        document.getElementById('popupCancelBtn').onclick = function() {
-            document.getElementById('monthYearPickerPopup').style.display = 'none';
-        };
-        
-        document.getElementById('popupApplyBtn').onclick = function() {
-            const m = document.getElementById('popupMonthSelect').value;
-            const y = document.getElementById('popupYearSelect').value;
-            calendar.gotoDate(new Date(y, m, 1));
-            document.getElementById('monthYearPickerPopup').style.display = 'none';
-        };
-        
-        document.addEventListener('click', function(e) {
-            const popup = document.getElementById('monthYearPickerPopup');
-            if (popup.style.display === 'block' && !popup.contains(e.target) && !e.target.closest('.fc-toolbar-title')) {
-                popup.style.display = 'none';
-            }
-        });
         loadTimeSlots();
         } catch(e) {
             console.error('Calendar init error:', e);

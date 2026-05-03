@@ -95,32 +95,59 @@
             <div class="section-divider"></div>
 
             {{-- ════════════════════════════════════════════════════
-                 SECTION 3: PAYMENT DETAILS
-                 State A → pending            — choose method
-                 State B → payment_method_set — confirmed, next step
-                 State C → anything beyond    — locked, read-only
+                 SECTION 3: PAYMENT & APPOINTMENT DETAILS
             ════════════════════════════════════════════════════ --}}
-            @php
-                $status      = $docRequest->status;
-                $method      = $docRequest->payment_method;
-                $isSelecting = $status === 'pending';
-                $isConfirmed = $status === 'payment_method_set';
-                $isLocked    = !$isSelecting && !$isConfirmed;
-            @endphp
-
-            <div class="section-heading" style="margin-bottom:12px;">Payment Instruction</div>
-
-            <div class="payment-info-box" style="background: #F0F7F0; border: 1px solid #C3DEC9; border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
-                <i class="bi bi-cash-stack" style="color: #1B6B3A; font-size: 1.2rem;"></i>
-                <div>
-                    <div style="font-weight: 700; color: #1B6B3A; font-size: 0.88rem;">Payment Method: Over-the-Counter Cash</div>
-                    <div style="color: #1B6B3A; font-size: 0.82rem;">Please pay at the cashier office on your appointment day.</div>
+            <div class="appointment-card">
+                <div class="appointment-header">
+                    <i class="bi bi-calendar-check" style="font-size: 1.2rem;"></i>
+                    <span>Appointment Details</span>
                 </div>
-            </div>
-
-            <div class="payment-instructions" style="background: #D1ECF1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px 14px; font-size: 0.8rem; color: #0c5460; margin-bottom: 16px;">
-                <i class="bi bi-info-circle-fill me-2"></i>
-                Bring your school ID and reference number (<strong>{{ $docRequest->reference_number }}</strong>) to the cashier office.
+                
+                @if($docRequest->appointment)
+                    <div class="appointment-body">
+                        <div class="apt-item">
+                            <span class="apt-label">Date</span>
+                            <span class="apt-value">{{ \Carbon\Carbon::parse($docRequest->appointment->appointment_date)->format('F d, Y') }}</span>
+                        </div>
+                        <div class="apt-item">
+                            <span class="apt-label">Time</span>
+                            <span class="apt-value">{{ $docRequest->appointment->timeSlot->label ?? 'N/A' }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-instructions">
+                        <i class="bi bi-cash-stack me-2" style="font-size: 1.1rem;"></i>
+                        <span>
+                            Please pay <strong>₱{{ number_format($docRequest->total_fee, 2) }}</strong> at the cashier office on 
+                            <strong>{{ \Carbon\Carbon::parse($docRequest->appointment->appointment_date)->format('F d, Y') }}</strong> between 
+                            <strong>{{ $docRequest->appointment->timeSlot->label ?? 'your scheduled time' }}</strong>. 
+                            Bring your school ID and reference number (<strong>{{ $docRequest->reference_number }}</strong>).
+                        </span>
+                    </div>
+                @elseif($docRequest->is_walk_in)
+                    <div class="appointment-body">
+                        <div class="apt-item">
+                            <span class="apt-label">Type</span>
+                            <span class="apt-value">Walk-in Request</span>
+                        </div>
+                        <div class="apt-item">
+                            <span class="apt-label">Schedule</span>
+                            <span class="apt-value">Immediate Processing</span>
+                        </div>
+                    </div>
+                    <div class="payment-instructions" style="background: #e7f3ff; color: #0d47a1; border-color: #bbdefb;">
+                        <i class="bi bi-info-circle me-2" style="font-size: 1.1rem;"></i>
+                        <span>
+                            This is a <strong>Walk-in</strong> request. Please proceed to the cashier to pay the total fee of 
+                            <strong>₱{{ number_format($docRequest->total_fee, 2) }}</strong> and present your reference number 
+                            (<strong>{{ $docRequest->reference_number }}</strong>).
+                        </span>
+                    </div>
+                @else
+                    <div class="appointment-body">
+                        <span style="color: #666; font-style: italic;">No appointment details found for this request.</span>
+                    </div>
+                @endif
             </div>
 
             <div class="section-divider"></div>
@@ -138,7 +165,7 @@
         <a href="{{ route('student.dashboard') }}" class="btn-cancel">Back to Home</a>
 
         @if($docRequest->status === 'pending')
-            <button type="button" class="btn-danger" id="cancel-request-btn">
+            <button type="button" class="btn-danger" id="cancel-request-btn" onclick="document.getElementById('cancel-request-form').submit();">
                 <i class="bi bi-x-circle me-1"></i> Cancel Request
             </button>
             <form id="cancel-request-form"
@@ -155,15 +182,8 @@
 
 @endsection
 
-
-{{-- ════════════════════════════════════════════════════════════════════
-     PAGE STYLES
-     Bell styles are in the layout — nothing bell-related lives here.
-════════════════════════════════════════════════════════════════════ --}}
 @push('styles')
 <style>
-
-    /* ── Sticky header ── */
     .req-sticky-header {
         background: #1B6B3A;
         color: white;
@@ -179,7 +199,6 @@
         z-index: 10;
     }
 
-    /* ── Scrollable container ── */
     .req-scroll {
         height: calc(100vh - var(--header-h) - var(--footer-h) - 120px);
         overflow-y: auto;
@@ -188,7 +207,6 @@
     }
     .req-scroll::-webkit-scrollbar { display: none; }
 
-    /* ── Main card ── */
     .req-card {
         background: #ffffff;
         border: 1px solid #D0DDD0;
@@ -199,7 +217,6 @@
     }
     .req-card-body { padding: 20px 24px; }
 
-    /* ── Section helpers ── */
     .section-heading {
         font-size: 0.85rem;
         font-weight: 700;
@@ -215,10 +232,8 @@
     }
     .section-divider { border-top: 1px solid #D0DDD0; margin: 16px 0; }
 
-    /* ── Reference meta (top-right of student info section) ── */
     .ref-meta { font-size: 0.78rem; color: #666; line-height: 1.6; text-align: right; }
 
-    /* ── Form grid rows ── */
     .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 10px; }
     .form-row-2 { display: grid; grid-template-columns: 1fr 1fr;     gap: 12px; margin-bottom: 10px; }
     .form-row-1 { display: grid; grid-template-columns: 1fr;         gap: 12px; margin-bottom: 10px; }
@@ -243,7 +258,6 @@
     }
     .field-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    /* ── Documents table ── */
     .docs-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-bottom: 4px; }
     .docs-table-header { background: #1B6B3A; }
     .docs-table-header th { padding: 8px; font-size: 0.75rem; font-weight: 600; color: white; text-align: left; }
@@ -252,7 +266,6 @@
     .doc-meta      { color: #555; font-size: 0.8rem; }
     .doc-price     { font-weight: 700; color: #1B6B3A; font-size: 0.82rem; }
 
-    /* ── Total row ── */
     .total-row    { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding-top: 8px; }
     .total-label  { font-size: 0.82rem; font-weight: 700; color: #1A1A1A; }
     .total-display {
@@ -268,157 +281,95 @@
         font-family: 'Poppins', sans-serif;
     }
 
-    /* ── Payment method pills ── */
-    .method-pill {
-        border: 2px solid #1B6B3A;
-        color: #1B6B3A;
-        background: white;
-        font-weight: 600;
-        font-size: 0.82rem;
-        padding: 7px 18px;
-        border-radius: 50px;
-        cursor: pointer;
-        transition: all 0.15s;
-        font-family: 'Poppins', sans-serif;
+    .appointment-card {
+        border: 1px solid #C3DEC9;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 16px;
     }
-    .method-pill:hover,
-    .method-pill.active { background: #1B6B3A; color: white; }
-    .method-pill--sm    { padding: 4px 14px; font-size: 0.78rem; }
-
-    /* ── Method detail blocks (hidden until pill selected) ── */
-    .method-block       { display: none; }
-    .method-detail-box  { background: #F0F7F0; border: 1px solid #C3DEC9; border-radius: 8px; padding: 14px 16px; margin-bottom: 8px; }
-    .method-detail-title { font-size: 0.88rem; font-weight: 700; color: #1B6B3A; margin-bottom: 12px; }
-    .bank-row           { background: white; border: 1px solid #D0DDD0; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
-    .method-warning     { background: #FFF3CD; border: 1px solid #ffd700; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #664d03; }
-    .method-info        { background: #D1ECF1; border: 1px solid #bee5eb; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #0c5460; }
-
-    /* ── Status / confirmation boxes ── */
-    .status-confirmed-box {
+    .appointment-header {
+        background: #1B6B3A;
+        color: white;
+        padding: 12px 16px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .appointment-body {
+        padding: 16px;
+        background: #f8fafb;
+        display: flex;
+        gap: 24px;
+        border-bottom: 1px dashed #C3DEC9;
+    }
+    .apt-item {
+        display: flex;
+        flex-direction: column;
+    }
+    .apt-label {
+        font-size: 0.75rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+    }
+    .apt-value {
+        font-size: 0.95rem;
+        color: #1A1A1A;
+        font-weight: 600;
+    }
+    .payment-instructions {
+        background: #D4EDDA;
+        padding: 14px 16px;
+        font-size: 0.85rem;
+        color: #155724;
         display: flex;
         align-items: flex-start;
-        gap: 10px;
-        background: #D4EDDA;
-        border: 1px solid #C3E6CB;
-        border-radius: 8px;
-        padding: 12px 14px;
-        margin-bottom: 12px;
+        line-height: 1.5;
     }
-    .box-rejected {
-        background: #F8D7DA;
-        border: 1px solid #f5c2c7;
-        border-radius: 6px;
-        padding: 10px 12px;
-        font-size: 0.83rem;
-        color: #721C24;
-    }
-    .rejected-link { color: #721C24; font-weight: 700; }
 
-    /* ── Locked state rows ── */
-    .locked-row { font-size: 0.85rem; color: #444; margin-bottom: 8px; }
-
-    /* ── Payment prompt text ── */
-    .payment-prompt { font-size: 0.85rem; color: #555; margin-bottom: 14px; }
-
-    /* ── "Changed your mind" reselect link ── */
-    .reselect-link { font-size: 0.78rem; color: #888; text-decoration: underline; }
-
-    /* ── Note at bottom of card ── */
     .note-text { font-size: 0.78rem; color: #888; margin: 0; }
     .note-link  { color: #1A9FE0; font-weight: 600; }
 
-    /* ── Action buttons ── */
-    .btn-submit {
+    .submit-row {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        max-width: 900px;
+    }
+    
+    .btn-danger {
         display: inline-block;
-        background: #1A9FE0;
-        color: white;
-        font-weight: 700;
+        background: white;
+        color: #DC3545;
+        font-weight: 600;
         font-size: 0.85rem;
-        padding: 10px 28px;
-        border: none;
+        padding: 10px 24px;
+        border: 1px solid #DC3545;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-danger:hover {
+        background: #DC3545;
+        color: white;
+    }
+
+    .btn-cancel {
+        display: inline-block;
+        background: white;
+        color: #555;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 10px 24px;
+        border: 1px solid #ccc;
         border-radius: 6px;
         cursor: pointer;
         text-decoration: none;
-        letter-spacing: 0.3px;
-        transition: background 0.2s;
-        font-family: 'Poppins', sans-serif;
+        transition: all 0.2s;
     }
-    .btn-submit:hover { background: #0D7FBF; color: white; }
-
-    .btn-cancel {
-        background: #1A9FE0;
-        color: white;
-        font-weight: 700;
-        font-siz�────────────────────
-   Called when a method pill is clicked.
-   1. Marks the clicked pill active, clears others.
-   2. Shows the matching detail block, hides all others.
-   3. Sets the hidden input value so the form knows what was picked.
-   4. Reveals the Confirm button with a readable label.
-─────────────────────────────────────────────────────────────────── */
-function selectMethod(method) {
-    // Pill active state
-    document.querySelectorAll('.method-pill').forEach(function (btn) {
-        btn.classList.toggle('active', btn.dataset.method === method);
-    });
-
-    // Show only the matching detail block
-    document.querySelectorAll('.method-block').forEach(function (block) {
-        block.style.display = 'none';
-    });
-    var block = document.getElementById('block-' + method);
-    if (block) block.style.display = 'block';
-
-    // Update hidden input
-    var input = document.getElementById('selected-method-input');
-    if (input) input.value = method;
-
-    // Show confirm button with readable label
-    var btnWrap = document.getElementById('confirm-btn-wrap');
-    if (btnWrap) btnWrap.style.display = 'block';
-
-    var labels  = { gcash: 'GCash', bank_transfer: 'Bank Transfer', cash: 'Over-the-Counter Cash' };
-    var labelEl = document.getElementById('selected-method-label');
-    if (labelEl) labelEl.textContent = 'Selected: ' + (labels[method] || method);
-}
-
-/* ── Guard: block form submit if no method was chosen ───────────────
-   Uses CcstAlert.warning() from the layout's shared alert system.
-─────────────────────────────────────────────────────────────────── */
-var confirmForm = document.getElementById('confirm-method-form');
-if (confirmForm) {
-    confirmForm.addEventListener('submit', function (e) {
-        if (!document.getElementById('selected-method-input').value) {
-            e.preventDefault();
-            CcstAlert.incomplete('Please choose a payment method before confirming.');
-        }
-    });
-}
-
-/* ── Toggle reselect panel (State B — change mind link) ─────────────
-   Shows/hides the re-selection pills under the confirmed state box.
-─────────────────────────────────────────────────────────────────── */
-function toggleReselect() {
-    var wrap = document.getElementById('reselect-wrap');
-    if (!wrap) return;
-    wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
-}
-
-/* ── Cancel request ──────────────────────────────────────────────────
-   Uses CcstAlert.cancel() from the layout's shared alert system.
-   Submits the hidden DELETE form only after user confirms.
-─────────────────────────────────────────────────────────────────── */
-var cancelBtn = document.getElementById('cancel-request-btn');
-if (cancelBtn) {
-    cancelBtn.addEventListener('click', function () {
-        CcstAlert.cancel({
-            refNumber: '{{ $docRequest->reference_number }}',
-            onConfirm: function () {
-                document.getElementById('cancel-request-form').submit();
-            }
-        });
-    });
-}
-
-</script>
+    .btn-cancel:hover { background: #e2e6ea; }
+</style>
 @endpush

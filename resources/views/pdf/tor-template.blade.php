@@ -1,180 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Transcript of Records - {{ $student_name }}</title>
     <style>
-        @page {
-            margin: 1.5cm;
-        }
-        body {
-            font-family: 'Times New Roman', serif;
-            font-size: 10px;
-            line-height: 1.3;
-            color: #000;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        .header h1 {
-            font-size: 18px;
-            margin: 0 0 5px;
-            text-transform: uppercase;
-            font-family: serif;
-        }
-        .header h2 {
-            font-size: 12px;
-            margin: 0;
-            font-weight: normal;
-        }
-        .header p {
-            font-size: 10px;
-            margin: 2px 0;
-        }
-        .title {
-            text-align: center;
-            margin: 10px 0;
-        }
-        .title h3 {
-            font-size: 14px;
-            text-transform: uppercase;
-            margin: 0;
-            text-decoration: underline;
-        }
-        .student-info {
-            width: 100%;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #000;
-            padding-bottom: 10px;
-        }
-        .student-info td {
-            padding: 2px;
-        }
-        .transcript-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-        .transcript-table th, .transcript-table td {
-            border: 1px solid #000;
-            padding: 4px;
-            text-align: center;
-        }
-        .transcript-table th {
-            background-color: #f0f0f0;
-            font-weight: bold;
-        }
-        .transcript-table .subject-name {
-            text-align: left;
-        }
-        .semester-header {
-            background-color: #e9e9e9;
-            text-align: left !important;
-            font-weight: bold;
-            padding: 5px !important;
-        }
-        .grading-system {
-            margin-top: 20px;
-            font-size: 8px;
-            width: 100%;
-        }
-        .signature-area {
-            margin-top: 50px;
-            text-align: right;
-        }
-        .signature-box {
-            display: inline-block;
-            text-align: center;
-            width: 250px;
-        }
-        .signature-line {
-            border-top: 1px solid #000;
-            margin-top: 40px;
-            padding-top: 5px;
-        }
-        .footer {
-            position: absolute;
-            bottom: 15px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 8px;
-        }
+        @page { size: letter; margin: 0.5in; }
+        body { font-family: 'Times New Roman', serif; font-size: 9pt; margin: 0; padding: 0; }
+        .page { width: 100%; position: relative; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+        .header-text-cell { text-align: center; vertical-align: middle; }
+        .school-name { font-size: 14pt; font-weight: bold; color: #1565C0; font-family: 'Helvetica', Arial, sans-serif; line-height: 1.2; }
+        .formerly { font-style: italic; font-size: 9pt; color: #333; font-family: 'Helvetica', Arial, sans-serif; }
+        .address { font-size: 8pt; color: #333; font-family: 'Helvetica', Arial, sans-serif; }
+        .office { font-size: 10pt; font-weight: bold; color: #1565C0; font-family: 'Helvetica', Arial, sans-serif; margin-top: 2px; }
+        .header-divider { border-top: 2px solid #1565C0; margin: 6px 0 15px 0; }
+        .cert-title { text-align: center; font-size: 12pt; font-weight: bold; font-family: 'Helvetica', Arial, sans-serif; margin-bottom: 10px; }
+        .info-grid { width: 100%; margin-bottom: 15px; border-collapse: collapse; }
+        .info-grid td { padding: 2px 5px; border-bottom: 1px solid #EEE; }
+        .grades-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .grades-table th, .grades-table td { border: 1px solid #333; padding: 4px 6px; text-align: left; }
+        .grades-table th { background-color: #F0F7F0; font-weight: bold; text-align: center; text-transform: uppercase; font-size: 8pt; }
+        .footer-seal { position: absolute; bottom: 0.5in; left: 0in; font-style: italic; font-size: 8pt; }
+        .form-number { position: absolute; bottom: 0in; left: 0in; font-size: 8pt; }
+        .signatory-name { font-weight: bold; font-size: 10pt; text-decoration: underline; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>CLARK COLLEGE OF SCIENCE AND TECHNOLOGY</h1>
-        <h2>OFFICE OF THE REGISTRAR</h2>
-        <p>Dau, Mabalacat City, Pampanga, Philippines</p>
-        <p>Official Transcript of Records</p>
-    </div>
+<div class="page">
+    <table class="header-table">
+        <tr>
+            <td style="width: 64px; vertical-align: middle;">
+                <img src="{{ public_path('images/ccst-logo.png') }}" alt="CCST Logo" style="width: 64px; height: 64px;">
+            </td>
+            <td class="header-text-cell">
+                <div class="school-name">Clark College of Science and Technology</div>
+                <div class="formerly">Formerly: Clark International College of Science and Technology</div>
+                <div class="address">SNS Bldg., Aurea St., Samsonville Subdivision, Dau, Mabalacat City, Pampanga.</div>
+                <div class="office">OFFICIAL TRANSCRIPT OF RECORDS (SHS)</div>
+            </td>
+            <td style="width: 64px;"></td>
+        </tr>
+    </table>
+    <div class="header-divider"></div>
 
-    <table class="student-info">
+    <table class="info-grid">
         <tr>
-            <td style="width: 15%;"><strong>STUDENT NAME:</strong></td>
-            <td style="width: 45%;"><strong>{{ strtoupper($student_name) }}</strong></td>
-            <td style="width: 15%;"><strong>STUDENT NO:</strong></td>
-            <td style="width: 25%;">{{ $student_number }}</td>
+            <td width="15%"><strong>NAME:</strong></td><td width="35%">{{ strtoupper($student_name) }}</td>
+            <td width="15%"><strong>LRN:</strong></td><td width="35%">{{ $student_number }}</td>
         </tr>
         <tr>
-            <td><strong>COURSE:</strong></td>
-            <td>{{ strtoupper($strand) }}</td>
-            <td><strong>DATE OF BIRTH:</strong></td>
-            <td>-- / -- / ----</td>
+            <td><strong>STRAND:</strong></td><td>{{ strtoupper($strand) }}</td>
+            <td><strong>GENDER:</strong></td><td>__________</td>
         </tr>
         <tr>
-            <td><strong>ENTRANCE DATA:</strong></td>
-            <td colspan="3">High School Graduate</td>
+            <td><strong>GRADUATED:</strong></td><td>{{ $school_year }}</td>
+            <td><strong>DATE ISSUED:</strong></td><td>{{ $current_date }}</td>
         </tr>
     </table>
 
-    <table class="transcript-table">
+    <table class="grades-table">
         <thead>
             <tr>
-                <th style="width: 15%;">COURSE CODE</th>
-                <th style="width: 55%;">DESCRIPTIVE TITLE</th>
-                <th style="width: 10%;">GRADE</th>
-                <th style="width: 10%;">UNITS</th>
-                <th style="width: 10%;">REMARKS</th>
+                <th width="15%">Subject Code</th>
+                <th>Subject Description</th>
+                <th width="10%">Grade</th>
+                <th width="10%">Units</th>
+                <th width="15%">Remarks</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td colspan="5" class="semester-header">FIRST SEMESTER, SY {{ $school_year }}</td>
-            </tr>
             @foreach($grades['subjects'] as $subject)
             <tr>
-                <td>{{ $subject['code'] ?? 'SUBJ-' . $loop->iteration }}</td>
-                <td class="subject-name">{{ $subject['name'] }}</td>
-                <td>{{ $subject['grade'] }}</td>
-                <td>3.0</td>
-                <td>{{ $subject['remarks'] }}</td>
+                <td style="text-align: center;">SHS-{{ substr($subject['name'], 0, 3) }}</td>
+                <td>{{ $subject['name'] }}</td>
+                <td style="text-align: center;">{{ $subject['grade'] }}</td>
+                <td style="text-align: center;">1.0</td>
+                <td style="text-align: center;">PASSED</td>
             </tr>
             @endforeach
-            <tr>
-                <td colspan="5" style="text-align: center; font-style: italic;">(Continued on next page if applicable)</td>
+            <tr style="font-weight: bold;">
+                <td colspan="2" style="text-align: right;">GENERAL WEIGHTED AVERAGE:</td>
+                <td style="text-align: center;">{{ $grades['average'] }}</td>
+                <td></td>
+                <td style="text-align: center;">PROMOTED</td>
             </tr>
         </tbody>
     </table>
 
-    <div class="grading-system">
-        <strong>GRADING SYSTEM:</strong> 1.0 (97-100) Excellent; 1.25 (94-96) Very Good; 1.5 (91-93) Very Good; 1.75 (88-90) Good; 2.0 (85-87) Good; 
-        2.25 (82-84) Satisfactory; 2.5 (79-81) Satisfactory; 2.75 (76-78) Fair; 3.0 (75) Passed; 5.0 (Below 75) Failed; INC - Incomplete; DR - Dropped
+    <div style="margin-top: 40px;">
+        <table style="width: 100%; text-align: center;">
+            <tr>
+                <td width="50%">
+                    <div style="font-size: 8pt; margin-bottom: 30px;">Prepared by:</div>
+                    <div class="signatory-name">____________________</div>
+                    <div style="font-size: 8pt;">Registrar Clerk</div>
+                </td>
+                <td width="50%">
+                    <div style="font-size: 8pt; margin-bottom: 30px;">Certified Correct:</div>
+                    <div class="signatory-name">Ms. Chriscel Ivy A. Caranza</div>
+                    <div style="font-size: 8pt;">SHS Registrar</div>
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <div class="signature-area">
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div><strong>{{ strtoupper($registrar_name) }}</strong></div>
-            <div>School Registrar</div>
-        </div>
-    </div>
-
-    <div class="footer">
-        <p>NOT VALID WITHOUT SCHOOL SEAL | Reference No: {{ $reference_number }} | Date Issued: {{ $current_date }}</p>
-        <p>Page 1 of 1</p>
-    </div>
+    <div class="footer-seal"><em>Not valid without the<br>school's official seal</em></div>
+    <div class="form-number">CCST-TOR-SHS</div>
+</div>
 </body>
 </html>

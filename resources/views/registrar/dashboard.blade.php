@@ -50,16 +50,16 @@
 <div class="two-column-row">
     {{-- Quick Actions - Side by Side Buttons --}}
     <div class="quick-actions-buttons">
-        <a href="{{ route('registrar.appointments.print-cashier-list') }}" class="print-btn" target="_blank">
+        <button type="button" onclick="previewCashierReceipts()" class="print-btn" style="border:none; outline:none;">
             <div class="print-icon">
                 <img src="{{ asset('images/print.png') }}" alt="Print">
             </div>
             <div class="print-label">
                 <span>PRINT RECEIPTS</span>
             </div>
-        </a>
+        </button>
 
-        <a href="{{ route('registrar.walkin.index') }}" class="walkin-btn">
+        <a href="{{ route('registrar.walkin.create') }}" class="walkin-btn">
             <div class="walkin-icon">
                 <img src="{{ asset('images/walk-in.png') }}" alt="Walk-in">
             </div>
@@ -149,6 +149,25 @@
                     <button type="submit" class="btn-save-modal">Save Changes</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+{{-- Cashier Receipts Preview Modal --}}
+<div id="receiptsPreviewModal" class="modal-overlay" style="display:none;">
+    <div class="modal-container" style="max-width: 900px; width: 95%;">
+        <div class="modal-header" style="background: #1B6B3A;">
+            <h4><i class="bi bi-printer me-2"></i>Cashier Receipts Preview</h4>
+            <button class="modal-close" onclick="closeReceiptsModal()">&times;</button>
+        </div>
+        <div class="modal-body p-0" style="height: 75vh;">
+            <iframe id="receiptsIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel-modal" onclick="closeReceiptsModal()">Close</button>
+            <button class="btn-received px-4 py-2" onclick="printReceipts()" style="color:white; border:none; border-radius:6px; font-weight:600; background: #1B6B3A; cursor: pointer;">
+                <i class="bi bi-printer"></i> Print Receipts
+            </button>
         </div>
     </div>
 </div>
@@ -397,6 +416,42 @@
         font-size: 0.75rem;
     }
 
+    /* Modal Styling */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7); z-index: 2000;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+    }
+    .modal-container {
+        background: white; border-radius: 12px; 
+        overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        animation: modalFadeIn 0.3s ease-out;
+    }
+    @keyframes modalFadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .modal-header {
+        color: white; padding: 15px 20px;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-header h4 { margin: 0; font-size: 1.1rem; font-weight: 600; }
+    .modal-close { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+    .modal-footer {
+        padding: 15px 20px; display: flex; justify-content: flex-end;
+        gap: 12px; border-top: 1px solid #f0f0f0;
+    }
+    .btn-cancel-modal {
+        background: #f8f9fa; border: 1px solid #ddd; padding: 8px 20px;
+        border-radius: 6px; cursor: pointer; font-family: 'Poppins', sans-serif;
+        font-weight: 500;
+    }
+    .btn-received {
+        background: #1B6B3A;
+        color: white;
+    }
+
     /* Responsive */
     @media (max-width: 1000px) {
         .stats-grid, .two-column-row, .dashboard-bottom-row {
@@ -453,6 +508,22 @@
         document.getElementById('editContent').value = tempDiv.textContent || tempDiv.innerText || '';
         document.getElementById('editForm').action = `/registrar/announcements/${id}`;
         new bootstrap.Modal(document.getElementById('editModal')).show();
+    }
+
+    function previewCashierReceipts() {
+        const url = "{{ route('registrar.appointments.print-cashier-list') }}";
+        document.getElementById('receiptsIframe').src = url;
+        document.getElementById('receiptsPreviewModal').style.display = 'flex';
+    }
+
+    function closeReceiptsModal() {
+        document.getElementById('receiptsPreviewModal').style.display = 'none';
+        document.getElementById('receiptsIframe').src = '';
+    }
+
+    function printReceipts() {
+        const url = "{{ route('registrar.appointments.print-cashier-list') }}";
+        window.open(url, '_blank');
     }
 </script>
 @endpush

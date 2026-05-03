@@ -20,6 +20,21 @@
     <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 
     <style>
+        /* Green Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1B6B3A;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #134D29;
+        }
+
         :root {
             --green-dark:   #1B6B3A;
             --blue-main:    #1A9FE0;
@@ -217,7 +232,9 @@
             height: calc(100vh - var(--header-h) - var(--footer-h));
             overflow-y: auto;
             z-index: 100;
+            scrollbar-width: none; /* Hide for Firefox */
         }
+        .sidebar::-webkit-scrollbar { display: none; } /* Hide for Chrome/Safari */
 
         .sidebar-logo {
             text-align: center;
@@ -599,9 +616,9 @@
                     Dashboard
                 </a>
                 <a href="{{ route('registrar.requests.index') }}" class="{{ request()->routeIs('registrar.requests.*') ? 'active' : '' }}">
-                    Pending
+                    Requests
                 </a>
-                <a href="{{ route('registrar.walkin.index') }}" class="{{ request()->routeIs('registrar.walkin.*') ? 'active' : '' }}">
+                <a href="{{ route('registrar.walkin.create') }}" class="{{ request()->routeIs('registrar.walkin.*') ? 'active' : '' }}">
                     Walk-In Mode
                 </a>
                 <a href="{{ route('registrar.calendar') }}" class="{{ request()->routeIs('registrar.calendar') ? 'active' : '' }}">
@@ -712,13 +729,15 @@
         function renderNotificationsWithHighlight(notifications, highlightId = null) {
             if (!bellBody) return;
             
-            if (!notifications || notifications.length === 0) {
+            const notifArray = notifications ? (Array.isArray(notifications) ? notifications : Object.values(notifications)) : [];
+            
+            if (notifArray.length === 0) {
                 bellBody.innerHTML = `<div class="bell-empty"><i class="bi bi-bell-slash"></i>No notifications yet.</div>`;
                 return;
             }
             
             let html = '';
-            notifications.forEach(function(notif) {
+            notifArray.forEach(function(notif) {
                 const unreadClass = notif.read ? '' : 'unread';
                 const isHighlighted = (highlightId && notif.id === highlightId);
                 const highlightStyle = isHighlighted ? 'background: rgba(255, 241, 182, 1.0); border-left: 4px solid #F5C518;' : '';

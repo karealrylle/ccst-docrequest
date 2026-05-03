@@ -3,143 +3,90 @@
 namespace App\Http\Controllers\Registrar;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\DocumentType;
 use App\Models\DocumentRequest;
 use App\Models\DocumentRequestItem;
 use App\Models\StatusLog;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class WalkInController extends Controller
 {
-    public function index()
+    /**
+     * Show the walk-in document request form.
+     */
+    public function create()
     {
-        return view('registrar.walkin.index');
-    }
-
-    public function search(Request $request)
-    {
-        $query = $request->input('query');
-
-        if (!$query) {
-            return redirect()->back()->with('error', 'Please enter a student number or name.');
-        }
-
-        $students = User::where('role', 'student')
-            ->where(function($q) use ($query) {
-                $q->where('student_number', 'like', "%{$query}%")
-                  ->orWhere('first_name', 'like', "%{$query}%")
-                  ->orWhere('last_name', 'like', "%{$query}%")
-                  ->orWhere('name', 'like', "%{$query}%");
-            })
-            ->get();
-
-        return view('registrar.walkin.index', compact('students', 'query'));
-    }
-
-    public function create(Request $request)
-    {
-        $studentId = $request->query('student_id');
-        $student = null;
-
-        if ($studentId) {
-            $student = User::findOrFail($studentId);
-        }
-
         $documentTypes = DocumentType::where('is_active', true)->get();
-
-        return view('registrar.walkin.create', compact('student', 'documentTypes'));
+        return view('registrar.walkin.create', compact('documentTypes'));
     }
 
+    /**
+     * Store the walk-in document request without creating a user account.
+     */
     public function store(Request $request)
     {
+        // 1. Validate the form input
         $request->validate([
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
+            'full_name' => 'required|string|max:150',
             'student_number' => 'nullable|string|max:50',
-            'contact_number' => 'required|string|max:20',
+            'email' => 'nullable|email|max:150',
+            'contact_number' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
             'course_program' => 'required|string|max:100',
-            'year_level' => 'required|string|max:20',
+            'year_level' => 'required|string|max:50',
             'section' => 'nullable|string|max:50',
-        ]);
-
-        $password = Str::random(10);
-        $email = $request->student_number ? $request->student_number . '@walkin.local' : strtolower($request->first_name . $request->last_name) . '@walkin.local';
-
-        // Make email unique just in case
-        $baseEmail = $email;
-        $counter = 1;
-        while (User::where('email', $email)->exists()) {
-            $email = str_replace('@walkin.local', $counter . '@walkin.local', $baseEmail);
-            $counter++;
-        }
-
-        $student = User::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $email,
-            'password' => Hash::make($password),
-            'role' => 'student',
-            'student_number' => $request->student_number ?? 'WALK-IN-' . strtoupper(Str::random(5)),
-            'contact_number' => $request->contact_number,
-            'strand' => $request->course_program,
-            'grade_level' => $request->year_level,
-            'section' => $request->section ?? 'N/A',
-            'is_walk_in' => true,
-            'walk_in_registered_by' => Auth::id(),
-            'walk_in_registered_at' => now(),
-            'is_verified' => true,
-            'verified_at' => now(),
-            'verified_by' => Auth::id(),
-        ]);
-
-        return redirect()->route('registrar.walkin.create', ['student_id' => $student->id]);
-    }
-
-    public function createRequest(Request $request)
-    {
-        $request->validate([
-            'student_id' => 'required|exists:users,id',
             'documents' => 'required|array|min:1',
             'documents.*' => 'exists:document_types,id',
             'copies' => 'required|array',
         ]);
 
-        $student = User::findOrFail($request->student_id);
-
+        // 2. Calculate the total fee and determine if all requested docs are printable
         $totalFee = 0;
+        $allPrintable = true;
+
         foreach ($request->documents as $docId) {
             $docType = DocumentType::find($docId);
             $copies = $request->copies[$docId] ?? 1;
             $totalFee += $docType->fee * $copies;
+            
+            if (!$docType->is_printable) {
+                $allPrintable = false;
+            }
         }
 
-        // Generate Reference Number
+        // 3. Generate Reference Number (DQST-YYYY-XXXXX)
         $year = date('Y');
         $lastRequest = DocumentRequest::whereYear('created_at', $year)->orderBy('id', 'desc')->first();
         $sequence = $lastRequest ? intval(substr($lastRequest->reference_number, -5)) + 1 : 1;
         $referenceNumber = 'DQST-' . $year . '-' . str_pad($sequence, 5, '0', STR_PAD_LEFT);
 
+        // Determine initial status based on printability
+        // If all documents are printable, it's ready for pickup immediately
+        $initialStatus = $allPrintable ? 'ready_for_pickup' : 'pending';
+
+        // 4. Create the Document Request (user_id is null for walk-ins)
         $docRequest = DocumentRequest::create([
             'reference_number' => $referenceNumber,
-            'user_id' => $student->id,
-            'student_number' => $student->student_number,
-            'full_name' => $student->full_name,
-            'contact_number' => $student->contact_number ?? 'N/A',
-            'course_program' => $student->strand ?? 'N/A',
-            'year_level' => $student->grade_level ?? 'N/A',
-            'section' => $student->section ?? 'N/A',
+            'user_id' => null, // No user account
+            'student_number' => $request->student_number ?? 'WALK-IN',
+            'full_name' => $request->full_name,
+            'email' => $request->email,
+            'contact_number' => $request->contact_number ?? 'N/A',
+            'course_program' => $request->course_program,
+            'year_level' => $request->year_level,
+            'section' => $request->section ?? 'N/A',
             'total_fee' => $totalFee,
-            'status' => 'payment_method_set', // Skip pending for walk-in
-            'payment_method' => 'cash',
+            'status' => $initialStatus,
             'payment_status' => 'unpaid',
             'is_walk_in' => true,
+            'is_printable' => $allPrintable,
             'walk_in_handled_by' => Auth::id(),
+            'remarks' => $request->address ? 'Address: ' . $request->address : null,
         ]);
 
+        // 5. Create Document Request Items
         foreach ($request->documents as $docId) {
             $docType = DocumentType::find($docId);
             $copies = $request->copies[$docId] ?? 1;
@@ -152,53 +99,53 @@ class WalkInController extends Controller
             ]);
         }
 
+        // 6. Log the status
         StatusLog::create([
             'document_request_id' => $docRequest->id,
             'changed_by' => Auth::id(),
-            'old_status' => 'pending',
-            'new_status' => 'payment_method_set',
-            'notes' => 'Walk-in request created by registrar.',
+            'old_status' => null,
+            'new_status' => $initialStatus,
+            'notes' => $allPrintable ? 'Walk-in request created. All documents are printable, marked as ready for pickup immediately.' : 'Walk-in document request created. Awaiting payment and processing.',
         ]);
 
-        return redirect()->route('registrar.walkin.payment', $docRequest->id);
+        // 7. Redirect to the request details page
+        return redirect()->route('registrar.requests.show', $docRequest->id)
+            ->with('success', 'Walk-in request created successfully. ' . ($allPrintable ? 'The request is ready for printing.' : 'Please generate the Payment Slip for the student.'));
     }
 
-    public function printPayment($id)
+    public function generatePaymentDocument($id)
     {
-        $docRequest = DocumentRequest::with(['items.documentType', 'user'])->findOrFail($id);
-
-        if ($docRequest->payment_status === 'paid') {
-            return redirect()->route('registrar.requests.show', $docRequest->id)->with('success', 'Request is already paid.');
+        $request = DocumentRequest::with(['items.documentType', 'appointment'])->findOrFail($id);
+        
+        if (!$request->is_walk_in) {
+            abort(403, 'This request is not a walk-in request.');
         }
 
-        return view('registrar.walkin.payment', compact('docRequest'));
+        // Prepare data for the new cashier-payment-slip template
+        $data = [
+            'student_name' => $request->full_name,
+            'student_number' => $request->student_number ?? 'WALK-IN',
+            'reference_number' => $request->reference_number,
+            'request_date' => $request->created_at->format('F d, Y'),
+            'total_fee' => $request->total_fee,
+            'requested_documents' => $request->items,
+            'request_type' => 'WALK-IN',
+            'appointment_date' => $request->appointment ? $request->appointment->appointment_date->format('F d, Y') : 'WALK-IN',
+            'current_time' => now()->format('h:i A'),
+        ];
+
+        $pdf = Pdf::loadView('pdf.cashier-payment-slip', $data);
+        
+        // Return inline stream so the registrar can immediately print it
+        return $pdf->stream('payment-slip-'.$request->reference_number.'.pdf');
     }
 
-    public function completePayment(Request $request, $id)
+    /**
+     * Generate a blank physical document request form for students to fill up.
+     */
+    public function blankForm()
     {
-        $request->validate([
-            'receipt_number' => 'required|string|max:50',
-            'cashier_name' => 'nullable|string|max:100',
-        ]);
-
-        $docRequest = DocumentRequest::findOrFail($id);
-
-        $docRequest->update([
-            'payment_status' => 'paid',
-            'paid_at' => now(),
-            'receipt_number' => $request->receipt_number,
-            'cashier_name' => $request->cashier_name,
-            'status' => 'processing',
-        ]);
-
-        StatusLog::create([
-            'document_request_id' => $docRequest->id,
-            'changed_by' => Auth::id(),
-            'old_status' => 'payment_method_set',
-            'new_status' => 'processing',
-            'notes' => 'Walk-in payment recorded by registrar. Receipt: ' . $request->receipt_number,
-        ]);
-
-        return redirect()->route('registrar.requests.show', $docRequest->id)->with('success', 'Walk-in request created and payment recorded successfully. It is now processing.');
+        $documentTypes = DocumentType::where('is_active', true)->get();
+        return view('registrar.walkin.printable-blank-form', compact('documentTypes'));
     }
 }

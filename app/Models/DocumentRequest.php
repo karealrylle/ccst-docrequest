@@ -11,6 +11,7 @@ class DocumentRequest extends Model
         'user_id',
         'student_number',
         'full_name',
+        'email',
         'contact_number',
         'course_program',
         'year_level',
@@ -56,7 +57,7 @@ class DocumentRequest extends Model
 
     public function appointment()
     {
-        return $this->belongsTo(Appointment::class);
+        return $this->hasOne(Appointment::class, 'document_request_id');
     }
 
     public function processedBy()

@@ -4,7 +4,7 @@
 
 @section('content')
 
-<div class="reports-sticky-header">REPORTS & ANALYTICS</div>
+<div class="registrar-sticky-header">REPORTS & ANALYTICS</div>
 
 {{-- Analytics Dashboard --}}
 <div class="analytics-section">
@@ -17,7 +17,7 @@
         <div class="analytics-card">
             <div class="analytics-card-header">Monthly Document Requests</div>
             <div class="analytics-card-body">
-                <canvas id="requestsChart" height="200"></canvas>
+                <canvas id="requestsChart" height="140"></canvas>
             </div>
         </div>
         
@@ -25,23 +25,33 @@
         <div class="analytics-card">
             <div class="analytics-card-header">Monthly Appointments</div>
             <div class="analytics-card-body">
-                <canvas id="appointmentsChart" height="200"></canvas>
+                <canvas id="appointmentsChart" height="140"></canvas>
             </div>
         </div>
-        
-        {{-- Top Requested Documents --}}
-        <div class="analytics-card">
-            <div class="analytics-card-header">Most Requested Documents</div>
-            <div class="analytics-card-body">
-                <canvas id="topDocumentsChart" height="200"></canvas>
-            </div>
+    </div>
+    
+    {{-- Most Requested Documents - Full Width --}}
+    <div class="analytics-full-card">
+        <div class="analytics-card-header">Most Requested Documents</div>
+        <div class="analytics-card-body">
+            <canvas id="topDocumentsChart" height="100"></canvas>
         </div>
-        
+    </div>
+    
+    <div class="analytics-grid">
         {{-- Status Distribution --}}
-        <div class="analytics-card">
+        <div class="analytics-card" style="border-bottom: none;">
             <div class="analytics-card-header">Request Status Distribution</div>
             <div class="analytics-card-body">
-                <canvas id="statusChart" height="200"></canvas>
+                <canvas id="statusChart" height="140"></canvas>
+            </div>
+        </div>
+        
+        {{-- Empty or additional card can go here --}}
+        <div class="analytics-card" style="border-bottom: none; display: flex; align-items: center; justify-content: center; background: #fcfcfc;">
+            <div class="text-center">
+                <i class="bi bi-info-circle text-muted mb-2" style="font-size: 1.5rem;"></i>
+                <p class="text-muted small">Data updates in real-time as requests are processed.</p>
             </div>
         </div>
     </div>
@@ -58,8 +68,7 @@
         <div class="report-card">
             <div class="report-card-header">Document Requests Report</div>
             <div class="report-card-body">
-                <form method="POST" action="{{ route('registrar.reports.export') }}" target="_blank">
-                    @csrf
+                <form method="GET" action="{{ route('registrar.reports.export') }}" target="_blank">
                     <input type="hidden" name="report_type" value="requests">
                     
                     <div class="form-row">
@@ -91,8 +100,7 @@
         <div class="report-card">
             <div class="report-card-header">Payments Report</div>
             <div class="report-card-body">
-                <form method="POST" action="{{ route('registrar.reports.export') }}" target="_blank">
-                    @csrf
+                <form method="GET" action="{{ route('registrar.reports.export') }}" target="_blank">
                     <input type="hidden" name="report_type" value="payments">
                     
                     <div class="form-row">
@@ -109,7 +117,7 @@
                     <div class="form-group">
                         <label class="checkbox-label">
                             <input type="checkbox" name="include_summary" value="1" checked>
-                            <span>Include Summary (Total Collected by Method)</span>
+                            <span>Include Summary (Total Collected by Status)</span>
                         </label>
                     </div>
                     
@@ -124,8 +132,7 @@
         <div class="report-card">
             <div class="report-card-header">Appointments Report</div>
             <div class="report-card-body">
-                <form method="POST" action="{{ route('registrar.reports.export') }}" target="_blank">
-                    @csrf
+                <form method="GET" action="{{ route('registrar.reports.export') }}" target="_blank">
                     <input type="hidden" name="report_type" value="appointments">
                     
                     <div class="form-row">
@@ -157,8 +164,7 @@
         <div class="report-card">
             <div class="report-card-header">Students Report</div>
             <div class="report-card-body">
-                <form method="POST" action="{{ route('registrar.reports.export') }}" target="_blank">
-                    @csrf
+                <form method="GET" action="{{ route('registrar.reports.export') }}" target="_blank">
                     <input type="hidden" name="report_type" value="students">
                     
                     <div class="form-row">
@@ -191,56 +197,11 @@
 @endsection
 
 @section('right-panel')
-    <div class="rp-date-card">
-        <div class="rp-date-day">{{ now()->format('d') }}</div>
-        <div class="rp-date-month">{{ now()->format('F Y') }}</div>
-        <div class="rp-date-time" id="live-time">--:-- --</div>
-    </div>
-
-    <div class="ccst-card mb-0">
-        <div class="ccst-card-header blue">Quick Stats</div>
-        <div class="ccst-card-body p-0">
-            <div class="rp-stat-row">
-                <span><i class="bi bi-files me-2"></i> Total Requests</span>
-                <strong>{{ \App\Models\DocumentRequest::count() }}</strong>
-            </div>
-            <div class="rp-stat-row">
-                <span><i class="bi bi-check-circle me-2"></i> Completed</span>
-                <strong>{{ \App\Models\DocumentRequest::where('status', 'completed')->count() }}</strong>
-            </div>
-            <div class="rp-stat-row">
-                <span><i class="bi bi-people me-2"></i> Total Students</span>
-                <strong>{{ \App\Models\User::where('role', 'student')->count() }}</strong>
-            </div>
-            <div class="rp-stat-row" style="border-bottom:none;">
-                <span><i class="bi bi-calendar-check me-2"></i> Total Appointments</span>
-                <strong>{{ \App\Models\Appointment::count() }}</strong>
-            </div>
-        </div>
-    </div>
-
-    <div class="ccst-card mb-0">
-        <div class="ccst-card-header yellow">Report Tips</div>
-        <div class="ccst-card-body p-0">
-            <div class="rp-guide-step">
-                <span class="rp-step-num">1</span>
-                <span>Select date range for accurate data</span>
-            </div>
-            <div class="rp-guide-step">
-                <span class="rp-step-num">2</span>
-                <span>Check "Include Summary" for totals</span>
-            </div>
-            <div class="rp-guide-step" style="border-bottom:none;">
-                <span class="rp-step-num">3</span>
-                <span>PDF opens in new tab for printing</span>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @push('styles')
 <style>
-    .reports-sticky-header {
+    .registrar-sticky-header {
         background: #1B6B3A;
         color: white;
         font-size: 0.9rem;
@@ -249,7 +210,12 @@
         padding: 10px 20px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        position: relative; /* Changed to relative so it scrolls with content */
         margin-bottom: 20px;
+        margin-left: -24px;
+        margin-right: -24px;
+        margin-top: -28px;
+        width: calc(100% + 48px);
     }
 
     .section-header {
@@ -276,9 +242,15 @@
     }
 
     .analytics-card {
-        padding: 20px;
+        padding: 15px; /* Reduced padding */
         border-right: 1px solid #f0f0f0;
         border-bottom: 1px solid #f0f0f0;
+    }
+
+    .analytics-full-card {
+        padding: 15px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        background: #fafafa;
     }
 
     .analytics-card:nth-child(2n) {
@@ -385,19 +357,7 @@
         background: #0D7FBF;
     }
 
-    .rp-date-card {
-        background: rgba(255,255,255,0.18);
-        border-radius: 12px;
-        padding: 16px;
-        text-align: center;
-        color: white;
-        backdrop-filter: blur(8px);
-        margin-bottom: 18px;
-    }
 
-    .rp-date-day { font-size: 2.8rem; font-weight: 700; line-height: 1; }
-    .rp-date-month { font-size: 0.85rem; opacity: 0.85; margin-top: 2px; }
-    .rp-date-time { font-size: 1rem; font-weight: 600; margin-top: 6px; }
 
     .rp-stat-row {
         display: flex;
@@ -510,15 +470,28 @@
             datasets: [{
                 label: 'Number of Requests',
                 data: {!! json_encode($topDocuments->pluck('count')) !!},
-                backgroundColor: '#F5C518',
-                borderRadius: 6
+                backgroundColor: [
+                    '#1B6B3A', '#1A9FE0', '#F5C518', '#DC3545', '#6c757d'
+                ],
+                borderRadius: 4,
+                barThickness: 20
             }]
         },
         options: {
+            indexAxis: 'y', // Horizontal Bar Chart
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
                 legend: { display: false }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { display: false }
+                },
+                y: {
+                    grid: { display: false }
+                }
             }
         }
     });
@@ -550,17 +523,6 @@
         }
     });
 
-    function updateTime() {
-        const now = new Date();
-        let h = now.getHours();
-        const m = String(now.getMinutes()).padStart(2,'0');
-        const s = String(now.getSeconds()).padStart(2,'0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        const el = document.getElementById('live-time');
-        if (el) el.textContent = `${h}:${m}:${s} ${ampm}`;
-    }
-    updateTime();
-    setInterval(updateTime, 1000);
+
 </script>
 @endpush

@@ -32,8 +32,8 @@ class AccountVerifiedNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'message' => 'Your account has been verified! You can now log in and submit document requests.',
-            'url' => '/login',
+            'message' => '🎉 Your account has been verified! You can now submit document requests.',
+            'url' => route('student.dashboard', [], false),
             'type' => 'verification',
         ];
     }

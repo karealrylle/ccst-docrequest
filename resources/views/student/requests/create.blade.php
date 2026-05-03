@@ -190,11 +190,71 @@
                 </div>
             @endif
 
+            {{-- ── APPOINTMENT INFORMATION ── --}}
+            <div id="appointmentSection" style="display:none; margin-top:30px; border-top: 2px dashed #D0DDD0; padding-top:20px;">
+                <div class="section-heading" style="margin-bottom:15px;">
+                    APPOINTMENT INFORMATION
+                    <small class="text-muted d-block" style="text-transform:none; font-weight:400; margin-top:4px;">
+                        Please select your preferred date and time for document pickup.
+                    </small>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label>Preferred Date *</label>
+                        <input type="date" name="appointment_date" id="appointmentDate" 
+                               class="field-input" min="{{ date('Y-m-d') }}"
+                               onchange="fetchAvailableSlots()">
+                    </div>
+                    <div class="form-field">
+                        <label>Available Time Slots *</label>
+                        <select name="time_slot_id" id="timeSlotSelect" class="field-select" disabled>
+                            <option value="">— select date first —</option>
+                        </select>
+                        <div id="slotLoading" class="small text-primary mt-1" style="display:none;">
+                            <span class="spinner-border spinner-border-sm me-1"></span> Loading slots...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-3 py-2" style="font-size:0.78rem; border-left: 4px solid #1A9FE0;">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>Note:</strong> Appointments are subject to daily capacity limits. If a slot is not visible, it may be fully booked.
+                </div>
+            </div>
+
+            {{-- ── FORM 138 INSTRUCTIONS (Hidden Initially) ── --}}
+            <div id="form138Instructions" style="display:none; margin-top:30px; border-top: 2px dashed #DC3545; padding-top:20px;">
+                <div class="section-heading" style="margin-bottom:15px; color: #DC3545;">
+                    FORM 138 REQUEST INSTRUCTIONS
+                </div>
+                <div class="alert alert-warning py-3" style="font-size:0.85rem; border-left: 4px solid #DC3545; background-color: #fff9f9;">
+                    <i class="bi bi-exclamation-triangle-fill me-2" style="font-size: 1.1rem;"></i>
+                    <span>
+                        You have selected <strong>Form 138 (Report Card)</strong>. Appointment booking is disabled for this document because it requires manual verification of your records by the Registrar's Office.
+                        <br><br>
+                        <strong>How to proceed:</strong>
+                        <ul class="mt-2 mb-0">
+                            <li>Submit this request now (no appointment needed).</li>
+                            <li>Our staff will verify your records and process the document.</li>
+                            <li>You will receive an <strong>email notification</strong> once your Form 138 is ready for pickup.</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+
             {{-- Submit + Cancel INSIDE the card --}}
             <div class="submit-row">
                 <a href="{{ route('student.dashboard') }}" class="btn-cancel">Cancel</a>
-                <button type="button" class="btn-submit" onclick="validateForm()">
-                    SUBMIT
+                
+                {{-- Initial Button --}}
+                <button type="button" class="btn-book-step" id="btnBookStep" onclick="showAppointmentStep()">
+                    BOOK APPOINTMENT
+                </button>
+
+                {{-- Final Submit Button (Hidden Initially) --}}
+                <button type="button" class="btn-submit" id="btnFinalSubmit" style="display:none;" onclick="validateFinalForm()">
+                    SUBMIT REQUEST
                 </button>
             </div>
 
@@ -233,9 +293,7 @@
         height: calc(100vh - var(--header-h) - var(--footer-h) - 120px);
         overflow-y: auto;
         overflow-x: hidden;
-        scrollbar-width: none;
     }
-    .req-scroll::-webkit-scrollbar { display: none; }
 
     /* ── Main card ── */
     .req-card {
@@ -517,6 +575,29 @@
     }
 
     .btn-submit:hover { background: #0D7FBF; }
+
+    .btn-book-step {
+        background: #1B6B3A;
+        color: white;
+        font-weight: 700;
+        font-size: 0.88rem;
+        padding: 10px 36px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        letter-spacing: 0.5px;
+        transition: background 0.2s;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .btn-book-step:hover { background: #134D29; }
+
+    .form-row-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
 </style>
 @endpush
 
@@ -724,6 +805,171 @@
             }
             recalcTotal();
         });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Multi-Step Logic
+    // ─────────────────────────────────────────────────────────────────────────
+    function showAppointmentStep() {
+        const checkedRows = [...document.querySelectorAll('.doc-row')]
+            .filter(row => row.querySelector('.doc-checkbox').checked);
+
+        // Basic validation before showing appointment section
+        if (checkedRows.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Document Selected',
+                text: 'Please select at least one document before proceeding.',
+                confirmButtonColor: '#1B6B3A'
+            });
+            return;
+        }
+
+        // Check if any selected document is Form 138
+        const hasForm138 = checkedRows.some(row => {
+            const name = row.querySelector('.doc-name-cell').textContent.trim();
+            return name.toLowerCase().includes('form 138');
+        });
+
+        const appointmentSection = document.getElementById('appointmentSection');
+        const form138Instructions = document.getElementById('form138Instructions');
+        const btnBookStep = document.getElementById('btnBookStep');
+        const btnFinalSubmit = document.getElementById('btnFinalSubmit');
+
+        if (hasForm138) {
+            // Hide appointment booking, show instructions
+            appointmentSection.style.display = 'none';
+            form138Instructions.style.display = 'block';
+            
+            // Clear any selected appointment data to avoid validation errors if user switched back/forth
+            document.getElementById('appointmentDate').value = '';
+            document.getElementById('timeSlotSelect').value = '';
+            document.getElementById('timeSlotSelect').disabled = true;
+        } else {
+            // Show standard appointment booking
+            appointmentSection.style.display = 'block';
+            form138Instructions.style.display = 'none';
+        }
+
+        // Transition buttons
+        btnBookStep.style.display = 'none';
+        btnFinalSubmit.style.display = 'block';
+
+        // Scroll to the new section
+        setTimeout(() => {
+            const target = hasForm138 ? form138Instructions : appointmentSection;
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+
+    function fetchAvailableSlots() {
+        const date = document.getElementById('appointmentDate').value;
+        const slotSelect = document.getElementById('timeSlotSelect');
+        const loading = document.getElementById('slotLoading');
+
+        if (!date) return;
+
+        // Reset and show loading
+        slotSelect.innerHTML = '<option value="">Loading slots...</option>';
+        slotSelect.disabled = true;
+        loading.style.display = 'block';
+
+        fetch(`{{ route('student.appointments.available-slots') }}?date=${date}`)
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                slotSelect.innerHTML = '<option value="">— select time slot —</option>';
+                
+                if (data.length === 0) {
+                    slotSelect.innerHTML = '<option value="">No slots available for this date</option>';
+                } else {
+                    data.forEach(slot => {
+                        const option = document.createElement('option');
+                        option.value = slot.id;
+                        option.textContent = slot.label;
+                        if (slot.is_full) {
+                            option.disabled = true;
+                            option.textContent += ' [FULL]';
+                        }
+                        slotSelect.appendChild(option);
+                    });
+                    slotSelect.disabled = false;
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                console.error('Error fetching slots:', error);
+                slotSelect.innerHTML = '<option value="">Error loading slots. Try again.</option>';
+            });
+    }
+
+    function validateFinalForm() {
+        const appointmentSection = document.getElementById('appointmentSection');
+        const isAppointmentVisible = appointmentSection.style.display !== 'none';
+
+        if (isAppointmentVisible) {
+            const date = document.getElementById('appointmentDate').value;
+            const slot = document.getElementById('timeSlotSelect').value;
+
+            if (!date || !slot) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Appointment',
+                    text: 'Please select both an appointment date and a time slot.',
+                    confirmButtonColor: '#1A9FE0'
+                });
+                return;
+            }
+        }
+
+        // Final confirmation
+        Swal.fire({
+            title: 'Final Confirmation',
+            text: isAppointmentVisible 
+                ? 'Ready to submit your request and book this appointment?' 
+                : 'Ready to submit your Form 138 request for verification?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#1A9FE0',
+            cancelButtonColor: '#F5C518',
+            cancelButtonText: '<span style="color:#1A1A1A">Wait, let me check</span>',
+            confirmButtonText: 'Yes, Submit Request'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('requestForm').submit();
+            }
+        });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+    // Initial selection handling (Auto-select from Documents page)
+    // ─────────────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectId = urlParams.get('select');
+        
+        if (selectId) {
+            // Give a tiny delay to ensure all table elements are fully processed
+            setTimeout(() => {
+                const typeInput = document.querySelector(`.doc-type-id-input[value="${selectId}"]`);
+                if (typeInput) {
+                    const row = typeInput.closest('.doc-row');
+                    const checkbox = row.querySelector('.doc-checkbox');
+                    
+                    if (checkbox && !checkbox.checked) {
+                        checkbox.checked = true;
+                        toggleDocRow(checkbox);
+                        
+                        // Scroll the document table into view for the student
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Optional: Highlight the row briefly
+                        row.style.transition = 'background 0.5s';
+                        row.style.background = '#e8f5e9';
+                        setTimeout(() => row.style.background = '', 2000);
+                    }
+                }
+            }, 100);
+        }
     });
 </script>
 @endpush

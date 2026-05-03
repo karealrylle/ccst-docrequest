@@ -84,11 +84,7 @@
 @endsection
 
 @section('right-panel')
-    <div class="rp-date-card">
-        <div class="rp-date-day">{{ now()->format('d') }}</div>
-        <div class="rp-date-month">{{ now()->format('F Y') }}</div>
-        <div class="rp-date-time" id="live-time">--:-- --</div>
-    </div>
+
 
     <div class="ccst-card mb-0">
         <div class="ccst-card-header blue">Available Variables</div>
@@ -191,15 +187,7 @@
         margin-bottom: 8px;
     }
 
-    .rp-date-card {
-        background: rgba(255,255,255,0.18);
-        border-radius: 12px;
-        padding: 16px;
-        text-align: center;
-        color: white;
-        backdrop-filter: blur(8px);
-        margin-bottom: 18px;
-    }
+
 
     .rp-stat-row {
         display: flex;
