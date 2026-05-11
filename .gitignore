@@ -1,7 +1,9 @@
 /vendor
 /node_modules
 .env
-.env.*
+.env.backup
+.env.production
+# .env.* (Avoided to allow .env.example)
 *.log
 .DS_Store
 /storage/*.key
