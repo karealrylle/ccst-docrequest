@@ -342,9 +342,15 @@
 
         @media (max-width: 768px) {
             body { flex-direction: column; height: auto; overflow: auto; }
+            .page-bg .bg-img { background-size: cover; background-position: center; }
             .left-panel { width: 100%; min-height: 260px; padding: 32px 24px; }
-            .right-panel { width: 100%; border-radius: 0; padding: 32px 24px 60px; position: relative; }
-            .right-footer { position: static; margin-top: 20px; }
+            .left-content .ccst-logo { width: 180px; height: 180px; margin-bottom: 20px; }
+            .left-content h1 { font-size: 1.6rem; }
+            .right-panel { width: 100%; border-radius: 0; padding: 32px 24px 0; position: relative; background: transparent; box-shadow: none; display: flex; flex-direction: column; min-height: calc(100vh - 260px); }
+            .right-footer { position: relative; margin-top: 40px; background: var(--panel-bg); padding: 25px 20px 30px; border-radius: 20px 20px 0 0; margin-left: -24px; margin-right: -24px; margin-bottom: 0; z-index: 10; }
+            .below-card { color: white; margin-bottom: 30px; }
+            .below-card a { color: #F5C518; }
+            .curve-bg { display: none; }
         }
     </style>
 </head>

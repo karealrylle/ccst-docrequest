@@ -27,16 +27,19 @@ class DashboardController extends Controller
             ->where('user_id', $user->id)
             ->where('status', 'scheduled')
             ->whereDate('appointment_date', '>=', today())
+            ->whereHas('documentRequest', function ($query) {
+                $query->whereNotIn('status', ['received', 'completed', 'cancelled']);
+            })
             ->orderBy('appointment_date', 'asc')
             ->first();
 
         // Get counts for stats
         $pendingCount = DocumentRequest::where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'ready_for_pickup'])
+            ->whereIn('status', ['pending', 'processing', 'ready_for_pickup', 'payment_uploaded', 'payment_verified'])
             ->count();
 
         $completedCount = DocumentRequest::where('user_id', $user->id)
-            ->where('status', 'completed')
+            ->whereIn('status', ['completed', 'received'])
             ->count();
 
         // Announcements

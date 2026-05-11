@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'first_name',
@@ -34,7 +36,9 @@ class User extends Authenticatable
         'walk_in_registered_by',
         'walk_in_registered_at',
         'is_active',
+        'deactivated_by',
         'is_admin',
+        'deleted_at',
     ];
 
     protected $hidden = [
@@ -49,9 +53,28 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_verified' => 'boolean',
             'is_walk_in' => 'boolean',
+            'is_active' => 'boolean',
+            'is_admin' => 'boolean',
             'verified_at' => 'datetime',
             'walk_in_registered_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Scope a query to only include active users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Get the user who deactivated this user.
+     */
+    public function deactivatedBy()
+    {
+        return $this->belongsTo(User::class, 'deactivated_by');
     }
 
     /**
@@ -121,10 +144,14 @@ class User extends Authenticatable
         return $this->role === 'registrar';
     }
 
-    // Verification helpers
     public function isVerified(): bool
     {
         return $this->is_verified;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->is_admin === true;
     }
 
     public function markAsVerified($registrarId = null)

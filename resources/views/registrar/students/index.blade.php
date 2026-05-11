@@ -62,6 +62,13 @@
                                     <i class="bi bi-key"></i>
                                 </button>
                             </form>
+                            <form action="{{ route('registrar.students.destroy', $student->id) }}" method="POST" style="display:inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-reject" style="background: #6c757d;" title="Delete Account" onclick="return confirm('Are you sure you want to delete this student account? It will be soft-deleted for 30 days.')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                         </div>
                     </td>
                 </tr>
@@ -94,10 +101,10 @@
         font-size: 0.9rem;
         font-weight: 700;
         text-align: center;
-        padding: 10px 20px;
+        padding: 8px 20px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
     }
 
     .pending-card {
@@ -105,7 +112,7 @@
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        padding: 20px;
+        padding: 15px 20px;
     }
 
     .pending-table {
@@ -115,7 +122,7 @@
 
     .pending-table th {
         background: #F0F7F0;
-        padding: 12px;
+        padding: 8px 12px;
         font-size: 0.7rem;
         font-weight: 700;
         color: #1B6B3A;
@@ -123,7 +130,7 @@
     }
 
     .pending-table td {
-        padding: 12px;
+        padding: 6px 12px;
         border-bottom: 1px solid #f0f0f0;
         font-size: 0.8rem;
         vertical-align: middle;
@@ -192,6 +199,13 @@
     .text-center { text-align: center; }
     .py-4 { padding-top: 24px; padding-bottom: 24px; }
     .text-muted { color: #888; }
+
+    /* ── TABLE HEIGHT ADJUSTMENT ── */
+    /* Change 500px to a larger value (e.g., 700px) to show more rows */
+    .table-scroll-body {
+        max-height: 700px;
+        overflow-y: auto;
+    }
 </style>
 @endpush
 

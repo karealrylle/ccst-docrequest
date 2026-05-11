@@ -8,6 +8,44 @@
 
 <div class="calendar-layout-wrapper">
     <div class="calendar-filters" style="margin-bottom: 20px;">
+        <div class="calendar-filter-tabs" style="margin-bottom: 16px;">
+            <div class="stats-overview-card active" data-status="all">
+                <div class="stats-overview-icon"><i class="bi bi-grid"></i></div>
+                <div class="stats-overview-info">
+                    <div class="stats-overview-value">{{ $totalRequests }}</div>
+                    <div class="stats-overview-label">All</div>
+                </div>
+            </div>
+            <div class="stats-overview-card" data-status="pending">
+                <div class="stats-overview-icon"><i class="bi bi-hourglass-split"></i></div>
+                <div class="stats-overview-info">
+                    <div class="stats-overview-value">{{ $pendingCount }}</div>
+                    <div class="stats-overview-label">Pending</div>
+                </div>
+            </div>
+            <div class="stats-overview-card" data-status="missed">
+                <div class="stats-overview-icon"><i class="bi bi-calendar-x" style="color: #6c757d;"></i></div>
+                <div class="stats-overview-info">
+                    <div class="stats-overview-value">{{ $missedCount }}</div>
+                    <div class="stats-overview-label">Missed</div>
+                </div>
+            </div>
+            <div class="stats-overview-card" data-status="ready_for_pickup">
+                <div class="stats-overview-icon"><i class="bi bi-box-seam"></i></div>
+                <div class="stats-overview-info">
+                    <div class="stats-overview-value">{{ $readyCount }}</div>
+                    <div class="stats-overview-label">Ready</div>
+                </div>
+            </div>
+            <div class="stats-overview-card" data-status="completed">
+                <div class="stats-overview-icon"><i class="bi bi-check2-all"></i></div>
+                <div class="stats-overview-info">
+                    <div class="stats-overview-value">{{ $completedCount }}</div>
+                    <div class="stats-overview-label">Completed</div>
+                </div>
+            </div>
+        </div>
+
         <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; width: 100%;">
             {{-- Search Bar --}}
             <div class="search-box-wrapper" style="flex: 1; min-width: 250px;">
@@ -30,6 +68,7 @@
                     <div class="legend-item"><span class="legend-dot legend-dot-orange"></span> <span class="legend-text">Ready for Pickup</span></div>
                     <div class="legend-item"><span class="legend-dot legend-dot-green"></span> <span class="legend-text">Received</span></div>
                     <div class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span> <span class="legend-text">Completed</span></div>
+                    <div class="legend-item"><span class="legend-dot legend-dot-missed" style="background:#6c757d;"></span> <span class="legend-text">Missed</span></div>
                     <div class="legend-item"><span class="legend-dot" style="background:#6B7280;"></span> <span class="legend-text">Declined</span></div>
                 </div>
             </div>
@@ -315,7 +354,7 @@
     }
 
     .stats-overview-icon {
-        font-size: 1.8rem;
+        font-size: 1.35rem;
         color: #1B6B3A;
     }
 
@@ -1071,6 +1110,7 @@
             if (info.processing.length) dots.push('<span class="req-dot" style="background:#F97316;" title="Processing">' + info.processing.length + '</span>');
             if (info.ready.length)   dots.push('<span class="req-dot" style="background:#22c55e;" title="Ready for Pickup">' + info.ready.length + '</span>');
             if (info.completed.length) dots.push('<span class="req-dot" style="background:#3b82f6;" title="Completed">' + info.completed.length + '</span>');
+            if (info.missed && info.missed.length) dots.push('<span class="req-dot" style="background:#6c757d;" title="Missed">' + info.missed.length + '</span>');
             if (info.declined.length) dots.push('<span class="req-dot" style="background:#6B7280;" title="Declined">' + info.declined.length + '</span>');
 
             let dotsHtml = '<div class="req-dot-bar">' + dots.join('') + '</div>';
@@ -1094,6 +1134,7 @@
             info.processing.length ||
             info.ready.length ||
             info.completed.length ||
+            (info.missed && info.missed.length) ||
             info.declined.length
         );
 
@@ -1121,6 +1162,9 @@
             html += renderSection('Processing', 'processing', info.processing);
             html += renderSection('Ready for Pickup', 'ready', info.ready);
             html += renderSection('Completed', 'done', info.completed);
+            if (info.missed && info.missed.length) {
+                html += renderSection('Missed', 'declined', info.missed);
+            }
             html += renderSection('Declined', 'declined', info.declined);
         }
 

@@ -99,6 +99,7 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
     
     // ── Account ──────────────────────────────────────────────────────────────
     Route::get('/account', [StudentDashboard::class, 'account'])->name('account.index');
+    Route::delete('/account', [\App\Http\Controllers\Student\AccountController::class, 'destroy'])->name('account.destroy');
     Route::get('/account/photo', [StudentDashboard::class, 'servePhoto'])->name('account.photo');
     Route::post('/account/photo', [StudentDashboard::class, 'updatePhoto'])->name('account.updatePhoto');
     Route::patch('/account/profile', [StudentDashboard::class, 'updateProfile'])->name('account.updateProfile');
@@ -218,6 +219,7 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
         Route::get('/{id}', [StudentManagementController::class, 'show'])->name('show');
         Route::patch('/{id}/toggle-active', [StudentManagementController::class, 'toggleActive'])->name('toggle-active');
         Route::post('/{id}/send-reset', [StudentManagementController::class, 'sendPasswordReset'])->name('send-reset');
+        Route::delete('/{id}', [StudentManagementController::class, 'destroy'])->name('destroy');
     });
 
     // ── Calendar ──────────────────────────────────────────────────────────
@@ -274,7 +276,7 @@ Route::middleware(['auth', 'role:registrar'])->prefix('registrar')->name('regist
         Route::get('/', [RegistrarManagementController::class, 'index'])->name('index');
         Route::get('/create', [RegistrarManagementController::class, 'create'])->name('create');
         Route::post('/', [RegistrarManagementController::class, 'store'])->name('store');
-        Route::delete('/{id}', [RegistrarManagementController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/toggle-active', [RegistrarManagementController::class, 'toggleActive'])->name('toggle-active');
     });
 
 });
@@ -379,3 +381,5 @@ Route::get('/test-email', function () {
         ],
     ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 })->middleware('auth');
+
+

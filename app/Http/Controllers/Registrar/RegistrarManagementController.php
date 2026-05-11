@@ -7,17 +7,21 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
-class RegistrarManagementController extends Controller
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+
+class RegistrarManagementController extends Controller implements HasMiddleware
 {
-    public function __construct()
+    public static function middleware(): array
     {
-        // Only allow admin users to access this controller
-        $this->middleware(function ($request, $next) {
-            if (!auth()->user()->is_admin) {
-                abort(403, 'Unauthorized access. Only administrators can manage registrar accounts.');
-            }
-            return $next($request);
-        });
+        return [
+            new Middleware(function ($request, $next) {
+                if (!auth()->check() || !auth()->user()->is_admin) {
+                    abort(403, 'Unauthorized access. Only administrators can manage registrar accounts.');
+                }
+                return $next($request);
+            }),
+        ];
     }
 
     public function index()
@@ -59,19 +63,23 @@ class RegistrarManagementController extends Controller
         return redirect()->route('registrar.manage.index')->with('success', 'Registrar account created successfully.');
     }
 
-    public function destroy($id)
+    public function toggleActive($id)
     {
-        $user = User::findOrFail($id);
+        $registrar = User::where('role', 'registrar')->findOrFail($id);
         
-        if ($user->id === auth()->id()) {
-            return back()->with('error', 'You cannot delete your own account.');
-        }
-        
-        if ($user->role !== 'registrar') {
-            return back()->with('error', 'You can only delete registrar accounts.');
+        if ($registrar->id === auth()->id()) {
+            return back()->with('error', 'You cannot deactivate your own account.');
         }
 
-        $user->delete();
-        return back()->with('success', 'Registrar account removed successfully.');
+        $wasActive = $registrar->is_active;
+        
+        $registrar->update([
+            'is_active' => !$wasActive,
+            'deactivated_by' => $wasActive ? auth()->id() : null,
+        ]);
+
+        $status = $registrar->is_active ? 'activated' : 'deactivated';
+        
+        return back()->with('success', "Registrar {$registrar->name} has been {$status}.");
     }
 }

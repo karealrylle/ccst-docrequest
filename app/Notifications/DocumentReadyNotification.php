@@ -26,15 +26,16 @@ class DocumentReadyNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url('/student/requests/' . $this->docRequest->id);
+        $url = route('student.requests.history');
 
         return (new MailMessage)
             ->subject('Your Documents Are Ready for Pickup – CCST DocRequest')
             ->greeting('Hello ' . ($notifiable->first_name ?? 'Student') . ',')
             ->line('Your document request (**' . $this->docRequest->reference_number . '**) is now ready for pickup!')
-            ->line('Please proceed to the registrar\'s office during office hours to claim your documents.')
+            ->line('You can now book your pickup appointment through your student portal.')
+            ->line('Please proceed to the registrar\'s office during your scheduled appointment to claim your documents.')
             ->line('Don\'t forget to bring your school ID.')
-            ->action('View Request Details', $url)
+            ->action('Book Appointment', $url)
             ->line('Thank you for using CCST DocRequest!');
     }
 

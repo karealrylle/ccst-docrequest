@@ -40,13 +40,13 @@ class DocumentRequestController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
     public function store(Request $request)
     {
-        // Check if Form 138 is in the requested documents
-        $hasForm138 = false;
+        // Check if any non-printable document (like Form 138) is in the requested documents
+        $hasNonPrintable = false;
         if ($request->has('documents')) {
             foreach ($request->input('documents') as $doc) {
                 $docType = DocumentType::find($doc['document_type_id']);
-                if ($docType && stripos($docType->name, 'Form 138') !== false) {
-                    $hasForm138 = true;
+                if ($docType && !$docType->is_printable) {
+                    $hasNonPrintable = true;
                     break;
                 }
             }
@@ -62,8 +62,8 @@ class DocumentRequestController extends Controller
             'documents.*.copies'           => 'required|integer|min:1',
             'documents.*.assessment_year'  => 'nullable|string',
             'documents.*.semester'         => 'nullable|string',
-            'appointment_date' => $hasForm138 ? 'nullable|date|after_or_equal:today' : 'required|date|after_or_equal:today',
-            'time_slot_id'     => $hasForm138 ? 'nullable|exists:time_slots,id' : 'required|exists:time_slots,id',
+            'appointment_date' => $hasNonPrintable ? 'nullable|date|after_or_equal:today' : 'required|date|after_or_equal:today',
+            'time_slot_id'     => $hasNonPrintable ? 'nullable|exists:time_slots,id' : 'required|exists:time_slots,id',
         ]);
 
         $user = Auth::user();

@@ -24,7 +24,14 @@ class CalendarController extends Controller
             ->get();
 
         $totalRequests = DocumentRequest::count();
-        $pendingCount = DocumentRequest::where('status', 'pending')->count();
+        $pendingCount = DocumentRequest::where('status', 'pending')
+            ->whereDoesntHave('appointment', function($q) {
+                $q->where('status', 'missed');
+            })->count();
+        $missedCount = DocumentRequest::where('status', 'pending')
+            ->whereHas('appointment', function($q) {
+                $q->where('status', 'missed');
+            })->count();
         $approvedCount = DocumentRequest::whereIn('status', ['payment_method_set', 'payment_uploaded', 'payment_verified'])->count();
         $processingCount = DocumentRequest::where('status', 'processing')->count();
         $readyCount = DocumentRequest::where('status', 'ready_for_pickup')->count();
@@ -32,7 +39,7 @@ class CalendarController extends Controller
         $declinedCount = DocumentRequest::whereIn('status', ['cancelled', 'payment_rejected'])->count();
 
         return view('registrar.calendar.index', compact(
-            'timeSlots', 'totalRequests', 'pendingCount', 'approvedCount', 'processingCount', 'readyCount', 'completedCount', 'declinedCount'
+            'timeSlots', 'totalRequests', 'pendingCount', 'missedCount', 'approvedCount', 'processingCount', 'readyCount', 'completedCount', 'declinedCount'
         ));
     }
 
@@ -47,7 +54,7 @@ class CalendarController extends Controller
         $status = $request->input('status', 'all');
         $search = trim($request->input('search', ''));
 
-        $requests = DocumentRequest::with('user:id,first_name,last_name,student_number')
+        $requests = DocumentRequest::with(['user:id,first_name,last_name,student_number', 'appointment'])
             ->whereBetween('created_at', [$start, $end]);
 
         if ($status !== 'all') {
@@ -87,6 +94,7 @@ class CalendarController extends Controller
                     'processing' => [],
                     'ready'      => [],
                     'completed'  => [],
+                    'missed'     => [],
                     'declined'   => [],
                 ];
             }
@@ -100,8 +108,10 @@ class CalendarController extends Controller
                 'status' => $req->status,
             ];
 
+            $isMissed = $req->appointment && $req->appointment->status === 'missed';
+
             $key = match ($req->status) {
-                'pending', 'payment_method_set', 'payment_uploaded', 'payment_verified' => 'pending',
+                'pending', 'payment_method_set', 'payment_uploaded', 'payment_verified' => $isMissed ? 'missed' : 'pending',
                 'processing' => 'processing',
                 'ready_for_pickup' => 'ready',
                 'completed' => 'completed',

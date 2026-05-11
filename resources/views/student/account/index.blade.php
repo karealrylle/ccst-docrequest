@@ -39,7 +39,7 @@
             </div>
 
             {{-- ── Avatar + name block ── --}}
-            <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+            <div class="profile-identity-row" style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
 
                 <div style="position:relative; flex-shrink:0;">
                     <div id="avatar-wrap"
@@ -117,7 +117,7 @@
             <div style="font-size:0.72rem; font-weight:700; color:#888;
                         text-transform:uppercase; letter-spacing:0.4px; margin-bottom:10px;">
                 School Information
-                <span style="font-weight:400; text-transform:none; color:#aaa; margin-left:6px;">
+                <span class="school-info-note" style="font-weight:400; text-transform:none; color:#aaa; margin-left:6px;">
                     — contact the registrar to update these fields
                 </span>
             </div>
@@ -329,6 +329,27 @@
         </div>
     </div>
 
+    {{-- ══════════════════════════════════════════════════════════════
+         CARD 4 — DANGER ZONE
+    ══════════════════════════════════════════════════════════════════ --}}
+    <div class="req-card" style="margin-top:12px; border:1px solid #FFDada; background:#FFF5F5;">
+        <div class="req-card-body">
+            <div class="section-heading-row">
+                <span class="section-heading" style="color:#DC3545;">Danger Zone</span>
+            </div>
+            
+            <p style="font-size:0.78rem; color:#666; margin-bottom:15px;">
+                Deleting your account will remove all your data and document request history. This action is not immediate; your account will be soft-deleted for 30 days before permanent removal.
+            </p>
+
+            <div style="display:flex; justify-content:flex-start;">
+                <button type="button" class="btn-danger-outline" onclick="confirmAccountDeletion()">
+                    <i class="bi bi-trash3-fill me-1"></i>Delete My Account
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div style="padding-bottom:20px;"></div>
 
 </div>{{-- end req-scroll --}}
@@ -351,6 +372,41 @@
         overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
     }
     .req-scroll::-webkit-scrollbar { display: none; }
+
+    /* ── MOBILE ACCOUNT ── */
+    @media (max-width: 768px) {
+        .req-scroll {
+            height: calc(100vh - 60px - 35px - 40px);
+        }
+        .form-row-3, .form-row-2 {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .req-card-body {
+            padding: 15px 12px;
+        }
+        .profile-identity-row {
+            flex-direction: column;
+            text-align: center;
+        }
+        .btn-submit, .btn-danger-outline {
+            width: 100%;
+            justify-content: center;
+            padding: 12px;
+        }
+        .section-heading-row {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 5px;
+        }
+        .school-info-note {
+            display: block;
+            margin-left: 0 !important;
+            margin-top: 4px;
+        }
+    }
+
 
     .req-card {
         background: #ffffff; border: 1px solid #D0DDD0;
@@ -377,8 +433,27 @@
     .pwd-toggle { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#888; padding:0; font-size:0.85rem; line-height:1; }
     .pwd-toggle:hover { color:#1B6B3A; }
 
-    .btn-submit { display:inline-flex; align-items:center; background:#1A9FE0; color:white; font-weight:700; font-size:0.85rem; padding:10px 24px; border:none; border-radius:6px; cursor:pointer; text-decoration:none; font-family:'Poppins',sans-serif; transition:background 0.2s; }
     .btn-submit:hover { background:#0D7FBF; color:white; }
+
+    .btn-danger-outline {
+        display: inline-flex;
+        align-items: center;
+        background: transparent;
+        color: #DC3545;
+        font-weight: 700;
+        font-size: 0.82rem;
+        padding: 8px 18px;
+        border: 2px solid #DC3545;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        font-family: 'Poppins', sans-serif;
+        transition: all 0.2s;
+    }
+    .btn-danger-outline:hover {
+        background: #DC3545;
+        color: white;
+    }
 
     #bell-btn-wrapper { position:relative; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
     #bell-badge { position:absolute; top:-5px; right:-5px; background:#DC3545; color:white; font-size:0.58rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; padding:0 3px; display:none; align-items:center; justify-content:center; pointer-events:none; line-height:1; }
@@ -512,5 +587,60 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (confirmInput) confirmInput.addEventListener('input', checkMatch);
 });
+
+function confirmAccountDeletion() {
+    Swal.fire({
+        title: 'Delete Your Account?',
+        text: 'This will schedule your account for permanent deletion in 30 days. You will be logged out immediately. Are you sure?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#DC3545',
+        cancelButtonColor: '#1B6B3A',
+        confirmButtonText: 'Yes, Delete Account',
+        cancelButtonText: 'Cancel',
+        input: 'password',
+        inputPlaceholder: 'Enter your password to confirm',
+        inputAttributes: {
+            autocapitalize: 'off',
+            autocorrect: 'off'
+        },
+        showLoaderOnConfirm: true,
+        preConfirm: (password) => {
+            if (!password) {
+                Swal.showValidationMessage('Password is required');
+                return false;
+            }
+            return fetch('{{ route("student.account.destroy") }}', {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ password: password })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(json => { throw new Error(json.message || 'Verification failed') });
+                }
+                return response.json();
+            })
+            .catch(error => {
+                Swal.showValidationMessage(`Request failed: ${error}`);
+            });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Scheduled!',
+                text: 'Your account has been scheduled for deletion.',
+                icon: 'success'
+            }).then(() => {
+                window.location.href = '{{ route("login") }}';
+            });
+        }
+    });
+}
 </script>
 @endpush

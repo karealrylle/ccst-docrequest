@@ -504,15 +504,91 @@
         .badge-received           { color: #1A1A1A; font-weight: 700; }
         .badge-cancelled          { color: #999; text-decoration: line-through; }
 
-        /* ── RESPONSIVE ── */
-        @media (max-width: 1200px) {
-            .right-panel { display: none; }
-            .main-content {
-                margin-right: 0;
-                padding-right: 24px;
+        /* ── RESPONSIVE OVERRIDES ── */
+        @media (max-width: 992px) {
+            :root {
+                --sidebar-w: 0px; /* Hide sidebar space on mobile */
+                --right-w: 0px;
             }
-            .main-content::before {
+
+            .site-header {
+                padding: 0 12px;
+                height: 60px;
+            }
+
+            .site-header .header-title {
+                font-size: 0.75rem;
+                line-height: 1.2;
+                max-width: 200px;
+            }
+
+            /* Hamburger Menu */
+            .mobile-toggle {
+                display: flex !important;
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.8rem;
+                cursor: pointer;
+                padding: 0;
+                margin-right: 10px;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -260px; /* Hidden by default */
+                top: 0;
+                bottom: 0;
+                width: 260px !important;
+                z-index: 1000;
+                transition: left 0.3s ease;
+                box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+                height: 100vh;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
                 right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .main-content {
+                margin-right: 0 !important;
+                padding: 15px !important;
+            }
+
+            .main-content::before {
+                left: 0 !important;
+                right: 0 !important;
+            }
+
+            .right-panel {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .site-header .header-title {
+                font-size: 0.65rem;
+                max-width: 150px;
+            }
+            .site-footer span {
+                font-size: 0.6rem;
+                text-align: center;
+                padding: 0 10px;
             }
         }
     </style>
@@ -523,6 +599,9 @@
 
     {{-- HEADER --}}
     <header class="site-header">
+        <button class="mobile-toggle d-none" id="mobileToggle">
+            <i class="bi bi-list"></i>
+        </button>
         <span class="header-title">
             Clark College of Science and Technology's &nbsp; Document Request and Tracking System
         </span>
@@ -552,6 +631,7 @@
     </header>
 
     {{-- PAGE BODY --}}
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <div class="page-body">
 
         {{-- SIDEBAR --}}
@@ -1106,6 +1186,33 @@
         .swal2-actions { gap:10px !important; }
     `;
     document.head.appendChild(swalStyleEl);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // MOBILE SIDEBAR TOGGLE
+    // ═══════════════════════════════════════════════════════════════════════
+    const mobileToggle = document.getElementById('mobileToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    if (mobileToggle && sidebar && overlay) {
+        mobileToggle.addEventListener('click', function() {
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+        });
+
+        overlay.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        // Close sidebar when clicking a link on mobile
+        sidebar.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        });
+    }
     </script>
 
     @stack('scripts')

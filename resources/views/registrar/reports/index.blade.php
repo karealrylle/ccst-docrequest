@@ -501,16 +501,17 @@
     new Chart(statusCtx, {
         type: 'pie',
         data: {
-            labels: ['Pending', 'Ready for Pickup', 'Completed', 'Cancelled'],
+            labels: ['Pending', 'Missed', 'Ready for Pickup', 'Completed', 'Cancelled'],
             datasets: [{
                 data: [
                     {{ $statusDistribution['pending'] }},
+                    {{ $statusDistribution['missed'] }},
                     {{ $statusDistribution['ready_for_pickup'] }},
                     {{ $statusDistribution['completed'] }},
                     {{ $statusDistribution['cancelled'] }}
                 ],
-                backgroundColor: ['#FFF3CD', '#E8F4FD', '#D4EDDA', '#F0F0F0'],
-                borderColor: ['#856404', '#0969A2', '#155724', '#888'],
+                backgroundColor: ['#FFF3CD', '#6c757d', '#E8F4FD', '#D4EDDA', '#F0F0F0'],
+                borderColor: ['#856404', '#495057', '#0969A2', '#155724', '#888'],
                 borderWidth: 1
             }]
         },

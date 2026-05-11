@@ -103,7 +103,7 @@
                 </thead>
                 <tbody>
                     @foreach($documentTypes as $doc)
-                    <tr class="doc-row" data-fee="{{ $doc->fee }}" data-has-year="{{ $doc->has_school_year ? '1' : '0' }}">
+                    <tr class="doc-row" data-fee="{{ $doc->fee }}" data-has-year="{{ $doc->has_school_year ? '1' : '0' }}" data-is-printable="{{ $doc->is_printable ? '1' : '0' }}">
                         <td class="text-center">
                             <input type="checkbox"
                                    class="doc-checkbox"
@@ -203,7 +203,8 @@
                     <div class="form-field">
                         <label>Preferred Date *</label>
                         <input type="date" name="appointment_date" id="appointmentDate" 
-                               class="field-input" min="{{ date('Y-m-d') }}"
+                               class="field-input"
+                               min="{{ date('Y-m-d') }}"
                                onchange="fetchAvailableSlots()">
                     </div>
                     <div class="form-field">
@@ -231,7 +232,7 @@
                 <div class="alert alert-warning py-3" style="font-size:0.85rem; border-left: 4px solid #DC3545; background-color: #fff9f9;">
                     <i class="bi bi-exclamation-triangle-fill me-2" style="font-size: 1.1rem;"></i>
                     <span>
-                        You have selected <strong>Form 138 (Report Card)</strong>. Appointment booking is disabled for this document because it requires manual verification of your records by the Registrar's Office.
+                        You have selected a document that requires <strong>manual verification</strong> (e.g., Form 138). Appointment booking is disabled for this request because it requires the Registrar's Office to verify your records before the document can be prepared.
                         <br><br>
                         <strong>How to proceed:</strong>
                         <ul class="mt-2 mb-0">
@@ -598,6 +599,44 @@
         gap: 12px;
         margin-bottom: 10px;
     }
+
+    /* ── MOBILE REQUEST FORM ── */
+    @media (max-width: 768px) {
+        .req-sticky-header {
+            font-size: 0.8rem;
+            padding: 8px 15px;
+        }
+        .req-scroll {
+            height: calc(100vh - 60px - 35px - 40px); /* Adjust for mobile header/footer */
+        }
+        .req-card-body {
+            padding: 15px 12px;
+        }
+        .form-row-3, .form-row-2, .form-row-short {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .docs-table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .submit-row {
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 20px;
+        }
+        .btn-cancel, .btn-submit, .btn-book-step {
+            width: 100%;
+            text-align: center;
+            padding: 12px;
+        }
+        .total-row {
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+        }
+    }
 </style>
 @endpush
 
@@ -635,6 +674,7 @@
             qtyInput.value = 0;
         }
         recalcTotal();
+        updateStepButton();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -659,6 +699,7 @@
             toggleDocRow(checkbox);    // disables the row inputs
         }
         recalcTotal();
+        updateStepButton();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -825,10 +866,9 @@
             return;
         }
 
-        // Check if any selected document is Form 138
-        const hasForm138 = checkedRows.some(row => {
-            const name = row.querySelector('.doc-name-cell').textContent.trim();
-            return name.toLowerCase().includes('form 138');
+        // Check if any selected document is non-printable (like Form 138)
+        const hasNonPrintable = checkedRows.some(row => {
+            return row.dataset.isPrintable === '0';
         });
 
         const appointmentSection = document.getElementById('appointmentSection');
@@ -836,12 +876,12 @@
         const btnBookStep = document.getElementById('btnBookStep');
         const btnFinalSubmit = document.getElementById('btnFinalSubmit');
 
-        if (hasForm138) {
+        if (hasNonPrintable) {
             // Hide appointment booking, show instructions
             appointmentSection.style.display = 'none';
             form138Instructions.style.display = 'block';
             
-            // Clear any selected appointment data to avoid validation errors if user switched back/forth
+            // Clear any selected appointment data
             document.getElementById('appointmentDate').value = '';
             document.getElementById('timeSlotSelect').value = '';
             document.getElementById('timeSlotSelect').disabled = true;
@@ -857,9 +897,25 @@
 
         // Scroll to the new section
         setTimeout(() => {
-            const target = hasForm138 ? form138Instructions : appointmentSection;
+            const target = hasNonPrintable ? form138Instructions : appointmentSection;
             target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
+    }
+
+    function updateStepButton() {
+        const checkedRows = [...document.querySelectorAll('.doc-row')]
+            .filter(row => row.querySelector('.doc-checkbox').checked);
+        
+        const btnBookStep = document.getElementById('btnBookStep');
+        if (!btnBookStep) return;
+
+        const hasNonPrintable = checkedRows.some(row => row.dataset.isPrintable === '0');
+        
+        if (hasNonPrintable) {
+            btnBookStep.textContent = 'PROCEED TO SUBMIT';
+        } else {
+            btnBookStep.textContent = 'BOOK APPOINTMENT';
+        }
     }
 
     function fetchAvailableSlots() {
@@ -927,7 +983,7 @@
             title: 'Final Confirmation',
             text: isAppointmentVisible 
                 ? 'Ready to submit your request and book this appointment?' 
-                : 'Ready to submit your Form 138 request for verification?',
+                : 'Ready to submit your request for manual verification?',
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#1A9FE0',

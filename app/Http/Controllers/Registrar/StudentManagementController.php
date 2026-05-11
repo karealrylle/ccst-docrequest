@@ -48,4 +48,14 @@ class StudentManagementController extends Controller
         $student->sendPasswordResetNotification($token);
         return back()->with('success', 'Password reset link sent to student email.');
     }
+
+    public function destroy($id)
+    {
+        $student = User::where('role', 'student')->findOrFail($id);
+        
+        // Soft delete the student
+        $student->delete();
+        
+        return back()->with('success', 'Student account has been scheduled for deletion.');
+    }
 }

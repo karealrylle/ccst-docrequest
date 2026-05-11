@@ -376,6 +376,36 @@
         align-items: center;
         justify-content: center;
     }
+
+    /* ── MOBILE DASHBOARD ── */
+    @media (max-width: 768px) {
+        .welcome-title {
+            font-size: 1.8rem;
+        }
+        .welcome-subtitle {
+            font-size: 0.85rem;
+            line-height: 1.8;
+        }
+        .btn-hero-request {
+            padding: 12px 30px;
+            font-size: 0.9rem;
+            width: 100%;
+            text-align: center;
+        }
+        .appointment-details {
+            grid-template-columns: 1fr;
+        }
+        .announcements-grid {
+            grid-template-columns: 1fr;
+        }
+        .announce-card {
+            border-right: none;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .announce-card:last-child {
+            border-bottom: none;
+        }
+    }
 </style>
 @endpush
 
@@ -395,7 +425,8 @@
             if (result.isConfirmed) {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = `/student/appointments/${appointmentId}`;
+                const cancelUrl = "{{ route('student.appointments.cancel', ':id') }}";
+                form.action = cancelUrl.replace(':id', appointmentId);
                 form.innerHTML = '@csrf @method("DELETE")';
                 document.body.appendChild(form);
                 form.submit();

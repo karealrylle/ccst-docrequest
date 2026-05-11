@@ -60,12 +60,33 @@ class AppointmentController extends Controller
 
     public function missed($id)
     {
-        $appointment = Appointment::findOrFail($id);
+        $appointment = Appointment::with('documentRequest.user')->findOrFail($id);
+        $oldStatus = $appointment->status;
+        
         $appointment->update(['status' => 'missed']);
+        
+        // Synchronize with DocumentRequest
+        if ($appointment->documentRequest) {
+            $docReq = $appointment->documentRequest;
+            $oldReqStatus = $docReq->status;
+            $docReq->update(['status' => 'pending']);
+            
+            // Log the change
+            \App\Models\StatusLog::create([
+                'document_request_id' => $docReq->id,
+                'changed_by' => Auth::id(),
+                'old_status' => $oldReqStatus,
+                'new_status' => 'pending',
+                'notes' => 'Manual no-show: appointment marked as missed by registrar.',
+            ]);
+            
+            // Notify Student
+            if ($docReq->user) {
+                $docReq->user->notify(new \App\Notifications\AppointmentMissedNotification($appointment));
+            }
+        }
 
-        return redirect()
-            ->route('registrar.appointments.index')
-            ->with('success', 'Appointment marked as missed.');
+        return back()->with('success', 'Appointment marked as missed. Request status has been reset to pending.');
     }
 
     public function storeSlot(Request $request)

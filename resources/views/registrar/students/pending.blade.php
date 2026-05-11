@@ -35,7 +35,7 @@
                         <td>{{ $student->created_at->format('M d, Y') }}</td>
                         <td>
                             <div class="action-buttons">
-                                <button type="button" class="btn-view-id" onclick="viewId({{ $student->id }})">
+                                <button type="button" class="btn-view-id" onclick="viewId({{ $student->id }}, '{{ pathinfo($student->student_id_photo, PATHINFO_EXTENSION) }}')">
                                     <i class="bi bi-card-image"></i> ID
                                 </button>
                                 <button type="button" class="btn-verify" onclick="confirmVerify({{ $student->id }})">
@@ -83,27 +83,7 @@
 @section('right-panel')
 
 
-    <div class="ccst-card mb-0">
-        <div class="ccst-card-header blue">Verification Guide</div>
-        <div class="ccst-card-body p-0">
-            <div class="rp-guide-step">
-                <span class="rp-step-num">1</span>
-                <span>Click ID to view uploaded student ID</span>
-            </div>
-            <div class="rp-guide-step">
-                <span class="rp-step-num">2</span>
-                <span>Verify ID matches student information</span>
-            </div>
-            <div class="rp-guide-step">
-                <span class="rp-step-num">3</span>
-                <span>Click Verify to approve account</span>
-            </div>
-            <div class="rp-guide-step" style="border-bottom:none;">
-                <span class="rp-step-num">4</span>
-                <span>Click Reject to remove invalid registration</span>
-            </div>
-        </div>
-    </div>
+
 @endsection
 
 @push('styles')
@@ -233,6 +213,19 @@
     .text-center { text-align: center; }
     .py-4 { padding-top: 24px; padding-bottom: 24px; }
     .text-muted { color: #888; }
+
+    /* Custom Swal Styles */
+    .swal2-title-custom {
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        color: #1B6B3A !important;
+        padding-top: 20px !important;
+        font-family: 'Poppins', sans-serif !important;
+    }
+    .swal2-popup-custom {
+        border-radius: 15px !important;
+        padding-bottom: 20px !important;
+    }
 </style>
 @endpush
 
@@ -244,8 +237,43 @@
     });
 
     // View ID modal
-    function viewId(id) {
-        window.open(`/registrar/students/${id}/id`, '_blank', 'width=600,height=500');
+    function viewId(id, extension) {
+        const url = `/registrar/students/${id}/id`;
+        const isPdf = extension.toLowerCase() === 'pdf';
+
+        if (isPdf) {
+            Swal.fire({
+                title: '<i class="bi bi-file-earmark-pdf me-2"></i>Student ID Card',
+                html: `
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
+                        <iframe src="${url}" style="width: 100%; height: 50vh; border: none; border-radius: 4px;"></iframe>
+                    </div>
+                `,
+                width: '500px',
+                showCloseButton: true,
+                showConfirmButton: false,
+                customClass: {
+                    title: 'swal2-title-custom',
+                    popup: 'swal2-popup-custom'
+                }
+            });
+        } else {
+            Swal.fire({
+                title: '<i class="bi bi-person-badge me-2"></i>Student ID Card',
+                html: `
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 12px; display: flex; justify-content: center; align-items: center; overflow: hidden;">
+                        <img src="${url}" style="max-width: 100%; max-height: 50vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    </div>
+                `,
+                width: '450px',
+                showCloseButton: true,
+                showConfirmButton: false,
+                customClass: {
+                    title: 'swal2-title-custom',
+                    popup: 'swal2-popup-custom'
+                }
+            });
+        }
     }
 
     // Confirm reject

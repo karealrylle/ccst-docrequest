@@ -22,17 +22,20 @@
         <table class="pending-table">
             <thead>
                 <tr>
-                    <th style="width: 30%">Name</th>
-                    <th style="width: 35%">Email</th>
+                    <th style="width: 25%">Name</th>
+                    <th style="width: 30%">Email</th>
                     <th style="width: 15%">Role</th>
-                    <th style="width: 20%">Actions</th>
+                    <th style="width: 15%">Status</th>
+                    <th style="width: 15%">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($registrars as $registrar)
-                <tr>
-                    <td class="fw-bold">{{ $registrar->full_name ?? $registrar->name }}</td>
-                    <td>{{ $registrar->email }}</td>
+                <tr @if(!$registrar->is_active) style="background-color: #fcfcfc;" @endif>
+                    <td class="fw-bold @if(!$registrar->is_active) text-muted @endif">
+                        {{ $registrar->full_name ?? $registrar->name }}
+                    </td>
+                    <td class="@if(!$registrar->is_active) text-muted @endif">{{ $registrar->email }}</td>
                     <td>
                         @if($registrar->is_admin)
                             <span class="badge bg-primary">Admin</span>
@@ -41,13 +44,25 @@
                         @endif
                     </td>
                     <td>
+                        @if($registrar->is_active)
+                            <span class="badge bg-success">Active</span>
+                        @else
+                            <span class="badge bg-danger">Deactivated</span>
+                        @endif
+                    </td>
+                    <td>
                         @if($registrar->id !== auth()->id())
                         <div class="action-buttons">
-                            <form action="{{ route('registrar.manage.destroy', $registrar->id) }}" method="POST" style="display:inline;">
+                            <form action="{{ route('registrar.manage.toggle-active', $registrar->id) }}" method="POST" style="display:inline;">
                                 @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn-reject" onclick="return confirm('Are you sure you want to delete this account? This cannot be undone.')">
-                                    <i class="bi bi-trash"></i> Delete
+                                @method('PATCH')
+                                <button type="submit" class="{{ $registrar->is_active ? 'btn-deactivate' : 'btn-activate' }}" 
+                                        onclick="return confirm('Are you sure you want to {{ $registrar->is_active ? 'deactivate' : 'activate' }} this account?')">
+                                    @if($registrar->is_active)
+                                        <i class="bi bi-person-x"></i> Deactivate
+                                    @else
+                                        <i class="bi bi-person-check"></i> Activate
+                                    @endif
                                 </button>
                             </form>
                         </div>
@@ -58,7 +73,7 @@
                 </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">No registrar accounts found.</td>
+                        <td colspan="5" class="text-center py-4 text-muted">No registrar accounts found.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -111,14 +126,32 @@
         vertical-align: middle;
     }
 
-    .btn-reject {
+    .btn-deactivate {
         background: #DC3545;
         color: white;
         border: none;
         padding: 4px 10px;
         border-radius: 6px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-deactivate:hover {
+        background: #c82333;
+    }
+
+    .btn-activate {
+        background: #1B6B3A;
+        color: white;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-activate:hover {
+        background: #14522c;
     }
 </style>
 @endpush

@@ -23,13 +23,23 @@ class RequestManagementController extends Controller
             ->paginate(100);
 
         $totalRequests = DocumentRequest::count();
-        $pendingCount = DocumentRequest::whereIn('status', ['pending', 'payment_method_set', 'payment_uploaded', 'payment_rejected'])->count();
+        
+        $pendingCount = DocumentRequest::whereIn('status', ['pending', 'payment_method_set', 'payment_uploaded', 'payment_rejected'])
+            ->whereDoesntHave('appointment', function($q) {
+                $q->where('status', 'missed');
+            })->count();
+            
+        $missedCount = DocumentRequest::where('status', 'pending')
+            ->whereHas('appointment', function($q) {
+                $q->where('status', 'missed');
+            })->count();
+
         $readyCount = DocumentRequest::where('status', 'ready_for_pickup')->count();
         $completedCount = DocumentRequest::where('status', 'completed')->count();
         $cancelledCount = DocumentRequest::where('status', 'cancelled')->count();
 
         return view('registrar.requests.index', compact(
-            'requests', 'totalRequests', 'pendingCount', 'readyCount', 'completedCount', 'cancelledCount'
+            'requests', 'totalRequests', 'pendingCount', 'missedCount', 'readyCount', 'completedCount', 'cancelledCount'
         ));
     }
 

@@ -121,8 +121,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 40px 48px;
+            /* Removed justify-content: center to prevent clipping when content is long */
+            padding: 60px 48px;
             box-shadow: -8px 0 40px rgba(0,0,0,0.18);
             overflow-y: auto;
             position: relative;
@@ -180,6 +180,23 @@
 
         .card-body-inner {
             padding: 19px 24px 22px;
+            max-height: 72vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--blue-main) transparent;
+        }
+
+        .card-body-inner::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .card-body-inner::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .card-body-inner::-webkit-scrollbar-thumb {
+            background-color: var(--blue-main);
+            border-radius: 10px;
         }
 
         .card-subtitle {
@@ -293,6 +310,7 @@
             font-weight: 700;
             cursor: pointer;
             margin-top: 6px;
+            margin-bottom: 10px;
             transition: background 0.2s, transform 0.1s;
             box-shadow: 0 4px 14px rgba(26,159,224,0.35);
         }
@@ -331,9 +349,16 @@
 
         @media (max-width: 768px) {
             body { flex-direction: column; height: auto; overflow: auto; }
+            .page-bg .bg-img { background-size: cover; background-position: center; }
             .left-panel { width: 100%; min-height: 220px; padding: 32px 24px; }
-            .right-panel { width: 100%; border-radius: 0; margin-left: 0; padding: 32px 20px 60px; position: relative; }
-            .right-footer { position: static; margin-top: 20px; }
+            .left-content .ccst-logo { width: 150px; height: 150px; margin-bottom: 15px; }
+            .left-content h1 { font-size: 1.4rem; }
+            .right-panel { width: 100%; border-radius: 0; margin-left: 0; padding: 32px 20px 0; position: relative; background: transparent; box-shadow: none; display: flex; flex-direction: column; min-height: calc(100vh - 220px); }
+            .card-body-inner { padding-bottom: 40px; }
+            .right-footer { position: relative; margin-top: 40px; background: var(--panel-bg); padding: 25px 20px 30px; border-radius: 20px 20px 0 0; margin-left: -20px; margin-right: -20px; margin-bottom: 0; z-index: 10; }
+            .below-card { color: white; margin-bottom: 30px; }
+            .below-card a { color: #F5C518; }
+            .curve-bg { display: none; }
             .fields-grid { grid-template-columns: 1fr; }
             .field-full { grid-column: 1; }
             .name-grid { grid-template-columns: 1fr; gap: 10px; }
@@ -534,6 +559,17 @@
                                     style="padding-left: 32px;"
                                     required>
                             </div>
+                            
+                            {{-- ID Preview --}}
+                            <div id="id-preview-container" style="display: none; margin-top: 10px; text-align: center; border: 2px dashed #DBEAFE; padding: 10px; border-radius: 12px; background: #F8FAFF;">
+                                <p style="font-size: 0.6rem; color: #1B6B3A; font-weight: 700; margin-bottom: 5px;">ID PREVIEW</p>
+                                <img id="id-preview-img" src="#" alt="ID Preview" style="max-width: 100%; max-height: 150px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <div id="pdf-preview-icon" style="display: none;">
+                                    <i class="bi bi-file-pdf-fill" style="font-size: 3rem; color: #DC3545;"></i>
+                                    <p id="pdf-name" style="font-size: 0.7rem; color: #1A1A2E; margin-top: 5px;"></p>
+                                </div>
+                            </div>
+
                             <small style="font-size:0.65rem; color:#666;">Upload a clear photo of your school ID (JPG, PNG, or PDF, max 2MB)</small>
                             @error('student_id_photo')
                                 <div class="field-error">{{ $message }}</div>
@@ -638,6 +674,36 @@
         if (strandSelect.value && gradeLevelSelect.value) {
             generateSections();
         }
+
+        // ID Photo Preview Logic
+        const idInput = document.getElementById('student_id_photo');
+        const previewContainer = document.getElementById('id-preview-container');
+        const previewImg = document.getElementById('id-preview-img');
+        const pdfPreviewIcon = document.getElementById('pdf-preview-icon');
+        const pdfName = document.getElementById('pdf-name');
+
+        idInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                previewContainer.style.display = 'block';
+
+                if (file.type === 'application/pdf') {
+                    previewImg.style.display = 'none';
+                    pdfPreviewIcon.style.display = 'block';
+                    pdfName.textContent = file.name;
+                } else {
+                    pdfPreviewIcon.style.display = 'none';
+                    previewImg.style.display = 'inline-block';
+                    reader.onload = function(e) {
+                        previewImg.src = e.target.result;
+                    }
+                    reader.readAsDataURL(file);
+                }
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>

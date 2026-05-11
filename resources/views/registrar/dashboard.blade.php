@@ -83,7 +83,10 @@
                 @endif
             </div>
             <div class="announce-card-footer">
-                <button class="btn-edit" onclick="openEditModal({{ $announcement?->id }}, `{{ addslashes($announcement?->content ?? '') }}`)">
+                <button class="btn-edit" 
+                        data-id="{{ $announcement?->id }}" 
+                        data-content="{{ $announcement?->content ?? '' }}"
+                        onclick="openEditModal(this)">
                     <i class="bi bi-pencil"></i> Edit
                 </button>
                 <form method="POST" action="{{ route('registrar.announcements.publish', $announcement?->id) }}" class="d-inline">
@@ -451,6 +454,20 @@
         background: #1B6B3A;
         color: white;
     }
+    .btn-save-modal {
+        background: #1B6B3A;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+    .btn-save-modal:hover {
+        background: #134D29;
+    }
 
     /* Responsive */
     @media (max-width: 1000px) {
@@ -502,10 +519,10 @@
     updateTime();
     setInterval(updateTime, 1000);
 
-    function openEditModal(id, content) {
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = content;
-        document.getElementById('editContent').value = tempDiv.textContent || tempDiv.innerText || '';
+    function openEditModal(btn) {
+        const id = btn.getAttribute('data-id');
+        const content = btn.getAttribute('data-content');
+        document.getElementById('editContent').value = content;
         document.getElementById('editForm').action = `/registrar/announcements/${id}`;
         new bootstrap.Modal(document.getElementById('editModal')).show();
     }

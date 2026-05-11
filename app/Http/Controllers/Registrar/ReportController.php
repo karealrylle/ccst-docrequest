@@ -128,16 +128,22 @@ class ReportController extends Controller
             ->get();
 
         $statusCounts = $appointments->groupBy('status')->map->count();
-        $attendanceRate = $appointments->count() > 0 
-            ? round(($appointments->where('status', 'completed')->count() / $appointments->count()) * 100, 2)
+        $totalApps = $appointments->count();
+        $completedApps = $appointments->where('status', 'completed')->count();
+        $missedApps = $appointments->where('status', 'missed')->count();
+        
+        $attendanceRate = $totalApps > 0 
+            ? round(($completedApps / $totalApps) * 100, 2)
             : 0;
 
         $data = [
             'title' => 'Appointments Report',
             'subtitle' => Carbon::parse($dateFrom)->format('F d, Y') . ' - ' . Carbon::parse($dateTo)->format('F d, Y'),
             'appointments' => $appointments,
-            'totalAppointments' => $appointments->count(),
+            'totalAppointments' => $totalApps,
             'statusCounts' => $statusCounts,
+            'completedApps' => $completedApps,
+            'missedApps' => $missedApps,
             'attendanceRate' => $attendanceRate,
             'includeSummary' => $includeSummary,
             'generated_at' => now()->format('F d, Y h:i A'),
@@ -250,7 +256,14 @@ class ReportController extends Controller
     private function getStatusDistribution()
     {
         return [
-            'pending' => DocumentRequest::where('status', 'pending')->count(),
+            'pending' => DocumentRequest::where('status', 'pending')
+                ->whereDoesntHave('appointment', function($q) {
+                    $q->where('status', 'missed');
+                })->count(),
+            'missed' => DocumentRequest::where('status', 'pending')
+                ->whereHas('appointment', function($q) {
+                    $q->where('status', 'missed');
+                })->count(),
             'ready_for_pickup' => DocumentRequest::where('status', 'ready_for_pickup')->count(),
             'completed' => DocumentRequest::where('status', 'completed')->count(),
             'cancelled' => DocumentRequest::where('status', 'cancelled')->count(),

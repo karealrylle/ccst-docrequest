@@ -145,7 +145,15 @@
                     </div>
                 @else
                     <div class="appointment-body">
-                        <span style="color: #666; font-style: italic;">No appointment details found for this request.</span>
+                        @if(!$docRequest->is_printable)
+                            <div style="color: #666; font-style: italic; font-size: 0.85rem; line-height: 1.6;">
+                                <i class="bi bi-info-circle-fill me-1" style="color: #1A9FE0;"></i> 
+                                This request contains documents that require <strong>manual verification</strong> (e.g., Form 138). 
+                                Appointment booking is disabled for now. You will receive an email notification once your request is ready for pickup.
+                            </div>
+                        @else
+                            <span style="color: #666; font-style: italic;">No appointment details found for this request.</span>
+                        @endif
                     </div>
                 @endif
             </div>
@@ -357,19 +365,46 @@
         color: white;
     }
 
-    .btn-cancel {
-        display: inline-block;
-        background: white;
-        color: #555;
-        font-weight: 600;
-        font-size: 0.85rem;
-        padding: 10px 24px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        cursor: pointer;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
     .btn-cancel:hover { background: #e2e6ea; }
+
+    /* ── MOBILE SHOW ── */
+    @media (max-width: 768px) {
+        .req-scroll {
+            height: calc(100vh - 60px - 35px - 40px);
+        }
+        .form-row-3, .form-row-2 {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .section-heading-row {
+            flex-direction: column;
+            gap: 10px;
+        }
+        .ref-meta {
+            text-align: left;
+        }
+        .docs-table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .appointment-body {
+            flex-direction: column;
+            gap: 12px;
+        }
+        .submit-row {
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 20px;
+        }
+        .btn-cancel, .btn-danger {
+            width: 100%;
+            text-align: center;
+        }
+        .total-row {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
 </style>
 @endpush

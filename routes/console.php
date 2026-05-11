@@ -24,4 +24,7 @@ Schedule::call(function () {
             $appointment->user->notify(new AppointmentReminderNotification($appointment));
         }
     }
-})->everyMinute();
+})->daily();
+
+Schedule::command('app:purge-soft-deleted-students')->daily();
+Schedule::command('app:handle-missed-appointments')->dailyAt('23:59');

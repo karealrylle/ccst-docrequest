@@ -97,12 +97,29 @@
                                 'processing'         => ['label' => 'Processing',       'class' => 'badge-processing'],
                                 'ready_for_pickup'   => ['label' => 'Ready for Pickup', 'class' => 'badge-ready'],
                                 'received'           => ['label' => 'Received',         'class' => 'badge-received'],
+                                'completed'          => ['label' => 'Completed',        'class' => 'badge-completed'],
                                 'cancelled'          => ['label' => 'Cancelled',        'class' => 'badge-cancelled'],
-                                default              => ['label' => $status,            'class' => 'badge-not-set'],
+                                default              => ['label' => ucfirst($status),   'class' => 'badge-not-set'],
                             };
 
-                            $showBook     = $status === 'ready_for_pickup'
-                                            && !$hasActiveAppointment;
+                            // Check if appointment was missed
+                            $isMissed = $appointment && $appointment->status === 'missed';
+
+                            // Determine if the request is finished
+                            $isFinished = in_array($status, ['received', 'completed', 'cancelled']);
+
+                            // Check if appointment exists and is active (scheduled)
+                            // Buttons should only show if the request is NOT finished
+                            $hasActiveAppointment = $appointment && $appointment->status === 'scheduled' && !$isFinished;
+                            
+                            // Determine which cancel button to show
+                            $showCancelAppointment = $hasActiveAppointment;
+                            $showCancelRequest = $status === 'pending' && !$hasActiveAppointment && !$isFinished;
+
+                            // Show Book button if it's ready OR if it's pending (like for Form 138 or Missed)
+                            $showBook     = ($status === 'ready_for_pickup' || $status === 'pending')
+                                            && !$hasActiveAppointment
+                                            && !$isFinished;
                         @endphp
                         <tr style="background:{{ $index % 2 === 0 ? '#f8fafb' : 'white' }};">
 
@@ -135,14 +152,14 @@
                                     {{ $reqBadge['label'] }}
                                 </span>
                             </td>
-
-                            </td>
-                            <td class="text-center" style="padding:10px 8px;">
+                             <td class="text-center" style="padding:10px 8px;">
                                 @if($appointment && $appointment->status === 'scheduled')
                                     <div style="font-size:0.67rem; font-weight:600; color:#1B6B3A;">
                                         {{ date('M d', strtotime($appointment->appointment_date)) }}<br>
                                         {{ $appointment->timeSlot->label ?? '-' }}
                                     </div>
+                                @elseif($appointment && $appointment->status === 'missed')
+                                    <span class="hist-badge" style="background:#DC3545; color:white;">Missed</span>
                                 @else
                                     <span class="hist-badge" style="background:#F0F0F0; color:#888;">Not booked</span>
                                 @endif
@@ -340,6 +357,22 @@
     }
     .req-card-body { padding: 20px 12px; }
 
+    /* ── MOBILE HISTORY ── */
+    @media (max-width: 768px) {
+        .req-scroll {
+            height: calc(100vh - 60px - 35px - 40px);
+        }
+        .hist-table th, .hist-table td {
+            padding: 8px 4px;
+            font-size: 0.72rem;
+        }
+        .hist-btn {
+            width: 100%;
+            padding: 6px 8px;
+        }
+    }
+
+
     .section-heading { font-size:0.85rem; font-weight:700; color:#1A1A1A; text-transform:uppercase; letter-spacing:0.3px; }
     .section-heading-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
 
@@ -361,6 +394,7 @@
     .badge-processing   { background:#E8F4FD; color:#0969A2; font-style:italic; }
     .badge-ready        { background:#F5A623; color:white; font-weight:800; }
     .badge-received     { background:#1B6B3A; color:white; font-weight:800; }
+    .badge-completed    { background:#E2E2E2; color:#777; }
     .badge-cancelled    { background:#DC3545; color:white; }
     .badge-verified     { background:#1B6B3A; color:white; }
     .badge-rejected     { background:#F8D7DA; color:#721C24; }
@@ -460,7 +494,8 @@ function openRescheduleModal(appointmentId, date, timeSlotId) {
     document.getElementById('modal-subtitle').textContent = 'Choose a new date and time slot to pick up your documents.';
     document.getElementById('modal-submit-btn').innerHTML = '<i class="bi bi-check-circle me-1"></i>Save Changes';
     document.getElementById('modal-method').value = 'PATCH';
-    document.getElementById('book-appointment-form').action = "/student/appointments/" + appointmentId;
+    const rescheduleUrl = "{{ route('student.appointments.reschedule', ':id') }}";
+    document.getElementById('book-appointment-form').action = rescheduleUrl.replace(':id', appointmentId);
     
     document.getElementById('modal-request-id').value = ''; // Not needed for reschedule
     
@@ -485,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const datePicker = document.getElementById('appointment-date-picker');
     if (datePicker && typeof flatpickr !== 'undefined') {
         flatpickr(datePicker, {
-            minDate: 'today',
+            minDate: "today",
             disable: [function (date) { return date.getDay() === 0 || date.getDay() === 6; }],
             dateFormat: 'Y-m-d',
             disableMobile: true

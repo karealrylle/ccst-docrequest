@@ -85,10 +85,10 @@
         font-size: 0.9rem;
         font-weight: 700;
         text-align: center;
-        padding: 10px 20px;
+        padding: 8px 20px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
     }
 
     .pending-card {
@@ -96,7 +96,7 @@
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        padding: 20px;
+        padding: 15px 20px;
     }
 
     .pending-table {
@@ -106,17 +106,17 @@
 
     .pending-table th {
         background: #F0F7F0;
-        padding: 12px;
-        font-size: 0.8rem;
+        padding: 8px 12px;
+        font-size: 0.7rem;
         font-weight: 700;
         color: #1B6B3A;
         text-align: left;
     }
 
     .pending-table td {
-        padding: 12px;
+        padding: 6px 12px;
         border-bottom: 1px solid #f0f0f0;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         vertical-align: middle;
     }
 
@@ -145,6 +145,13 @@
         border-radius: 6px;
         font-size: 0.8rem;
         cursor: pointer;
+    }
+
+    /* ── TABLE HEIGHT ADJUSTMENT ── */
+    /* Change 500px to a larger value (e.g., 700px) to show more rows */
+    .table-scroll-body {
+        max-height: 700px;
+        overflow-y: auto;
     }
 </style>
 @endpush

@@ -194,8 +194,57 @@
         position: relative;
         z-index: 5;
     }
-    .docs-scroll-container::-webkit-scrollbar {
-        display: none; /* Chrome/Safari */
+    /* ── MOBILE DOCUMENTS ── */
+    @media (max-width: 992px) {
+        .docs-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+    }
+    @media (max-width: 768px) {
+        .docs-scroll-container {
+            padding-top: 30px;
+        }
+        .docs-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px 15px;
+            max-width: 100%;
+        }
+        .docs-heading {
+            font-size: 1.3rem;
+            text-align: center;
+        }
+        .doc-icon-circle {
+            width: 85px;
+            height: 85px;
+        }
+        .doc-icon-circle img {
+            width: 45px;
+            height: 45px;
+        }
+        .doc-name {
+            font-size: 0.78rem;
+        }
+        .doc-tooltip {
+            display: none; /* Hide tooltips on touch devices */
+        }
+    }
+    @media (max-width: 480px) {
+        .docs-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px 10px;
+        }
+        .doc-icon-circle {
+            width: 75px;
+            height: 75px;
+        }
+        .doc-icon-circle img {
+            width: 40px;
+            height: 40px;
+        }
+        .doc-name {
+            font-size: 0.72rem;
+        }
     }
 </style>
 @endpush

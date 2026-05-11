@@ -43,6 +43,13 @@
             <div class="stats-overview-label">Completed</div>
         </div>
     </div>
+    <div class="stats-overview-card" data-filter="missed">
+        <div class="stats-overview-icon"><i class="bi bi-calendar-x" style="color: #6c757d;"></i></div>
+        <div class="stats-overview-info">
+            <div class="stats-overview-value">{{ $missedCount ?? 0 }}</div>
+            <div class="stats-overview-label">Missed</div>
+        </div>
+    </div>
     <div class="stats-overview-card" data-filter="cancelled">
         <div class="stats-overview-icon"><i class="bi bi-x-circle" style="color: #DC3545;"></i></div>
         <div class="stats-overview-info">
@@ -70,7 +77,10 @@
                 </thead>
                 <tbody>
                     @forelse($requests as $request)
-                    <tr data-status="{{ $request->status }}">
+                    @php
+                        $isMissed = $request->appointment && $request->appointment->status === 'missed' && $request->status === 'pending';
+                    @endphp
+                    <tr data-status="{{ $request->status }}" data-missed="{{ $isMissed ? '1' : '0' }}">
                         <td style="width: 10%">
                             <strong>{{ $request->reference_number }}</strong>
                             @if($request->is_walk_in)
@@ -97,15 +107,25 @@
                         <td style="width: 9%">₱{{ number_format($request->total_fee, 2) }}</td>
                         <td style="width: 12%">
                             @php
-                                $reqStatus = match($request->status) {
-                                    'pending' => ['label' => 'Pending', 'class' => 'req-pending'],
-                                    'ready_for_pickup' => ['label' => 'Ready for Pickup', 'class' => 'req-ready'],
-                                    'completed' => ['label' => 'Completed', 'class' => 'req-completed'],
-                                    'cancelled' => ['label' => 'Cancelled', 'class' => 'req-cancelled'],
-                                    default => ['label' => $request->status, 'class' => 'req-pending'],
-                                };
+                                $statusLabel = $request->status;
+                                $statusClass = 'req-pending';
+                                
+                                if ($request->appointment && $request->appointment->status === 'missed' && $request->status === 'pending') {
+                                    $statusLabel = 'Missed Appointment';
+                                    $statusClass = 'req-missed';
+                                } else {
+                                    $statusInfo = match($request->status) {
+                                        'pending' => ['label' => 'Pending', 'class' => 'req-pending'],
+                                        'ready_for_pickup' => ['label' => 'Ready for Pickup', 'class' => 'req-ready'],
+                                        'completed' => ['label' => 'Completed', 'class' => 'req-completed'],
+                                        'cancelled' => ['label' => 'Cancelled', 'class' => 'req-cancelled'],
+                                        default => ['label' => $request->status, 'class' => 'req-pending'],
+                                    };
+                                    $statusLabel = $statusInfo['label'];
+                                    $statusClass = $statusInfo['class'];
+                                }
                             @endphp
-                            <span class="req-badge {{ $reqStatus['class'] }}">{{ $reqStatus['label'] }}</span>
+                            <span class="req-badge {{ $statusClass }}">{{ $statusLabel }}</span>
                         </td>
                         <td style="width: 20%">
                             <div class="action-buttons">
@@ -613,7 +633,7 @@
     }
 
     .stats-overview-icon {
-        font-size: 1.8rem;
+        font-size: 1.35rem;
         color: #1B6B3A;
     }
 
@@ -746,6 +766,7 @@
     .req-ready { background: #F5A623; color: white; font-weight: 800; }
     .req-completed { background: #1B6B3A; color: white; font-weight: 800; }
     .req-cancelled { background: #DC3545; color: white; }
+    .req-missed { background: #6c757d; color: white; }
 </style>
 @endpush
 
@@ -762,14 +783,18 @@
             
             rows.forEach(row => {
                 const status = row.getAttribute('data-status');
+                const isMissed = row.getAttribute('data-missed') === '1';
+
                 if (filter === 'all') {
                     row.style.display = '';
+                } else if (filter === 'missed') {
+                    row.style.display = isMissed ? '' : 'none';
                 } else if (filter === 'pending') {
-                    // Match the controller's definition of pending
+                    // Match the controller's definition of pending, excluding missed
                     const pendingStatuses = ['pending', 'payment_method_set', 'payment_uploaded', 'payment_rejected'];
-                    row.style.display = pendingStatuses.includes(status) ? '' : 'none';
+                    row.style.display = (pendingStatuses.includes(status) && !isMissed) ? '' : 'none';
                 } else {
-                    row.style.display = (status === filter) ? '' : 'none';
+                    row.style.display = (status === filter && !isMissed) ? '' : 'none';
                 }
             });
         });

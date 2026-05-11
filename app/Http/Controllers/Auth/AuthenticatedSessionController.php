@@ -35,6 +35,13 @@ class AuthenticatedSessionController extends Controller
             ])->onlyInput('email');
         }
 
+        // Check if registrar account is active
+        if ($user->isRegistrar() && !$user->is_active) {
+            return back()->withErrors([
+                'email' => 'Your account has been deactivated. Please contact the system administrator.',
+            ])->onlyInput('email');
+        }
+
         // Attempt to authenticate
         $request->authenticate();
 

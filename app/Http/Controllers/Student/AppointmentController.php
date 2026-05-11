@@ -35,18 +35,27 @@ class AppointmentController extends Controller
             ->where('id', $validated['document_request_id'])
             ->firstOrFail();
 
-        // Verify request is ready for pickup OR is printable and pending
+        // Verify request is ready for pickup OR is printable and pending OR has a missed appointment
+        $hasMissedAppointment = Appointment::where('document_request_id', $docRequest->id)
+            ->where('status', 'missed')
+            ->exists();
+
         $canBookAppointment = $docRequest->status === 'ready_for_pickup' || 
-                             ($docRequest->status === 'pending' && $docRequest->is_printable);
+                             ($docRequest->status === 'pending' && $docRequest->is_printable) ||
+                             ($docRequest->status === 'pending' && $hasMissedAppointment);
         
         if (!$canBookAppointment) {
-            return back()->with('error', 'You can only book appointments for requests that are ready for pickup or printable documents awaiting processing.');
+            return back()->with('error', 'You can only book appointments for requests that are ready for pickup or that have been marked as missed.');
         }
 
         // Check if appointment already exists for this request
         $existingAppointment = Appointment::where('document_request_id', $docRequest->id)->first();
         if ($existingAppointment) {
-            return back()->with('error', 'An appointment already exists for this request.');
+            if ($existingAppointment->status === 'missed') {
+                $existingAppointment->delete(); // Remove the missed one so we can book a fresh one
+            } else {
+                return back()->with('error', 'An appointment already exists for this request.');
+            }
         }
 
         // Get the time slot and check capacity
